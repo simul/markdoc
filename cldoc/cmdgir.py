@@ -21,14 +21,14 @@ except:
 
 from cldoc.clang import cindex
 
-from . import defdict
+import defdict
 
-from . import nodes
-from . import generators
-from . import comment
-from . import example
-from . import documentmerger
-from . import utf8
+import nodes
+import generators
+import comment
+import example
+import documentmerger
+import utf8
 
 def nsgtk(s):
     return '{{{0}}}{1}'.format('http://www.gtk.org/introspection/core/1.0', s)

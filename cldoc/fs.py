@@ -14,7 +14,7 @@ from __future__ import absolute_import
 
 import os, tempfile, shutil, random
 
-from StringIO import StringIO
+from io import StringIO
 
 class System:
     @staticmethod

@@ -15,19 +15,19 @@ from __future__ import absolute_import
 import sys
 
 def run_inspect(args):
-    from . import cmdinspect
+    import cmdinspect
     cmdinspect.run(args)
 
 def run_serve(args):
-    from . import cmdserve
+    import cmdserve
     cmdserve.run(args)
 
 def run_generate(args):
-    from . import cmdgenerate
+    import cmdgenerate
     cmdgenerate.run(args)
 
 def run_gir(args):
-    from . import cmdgir
+    import cmdgir
     cmdgir.run(args)
 
 def print_available_commands():

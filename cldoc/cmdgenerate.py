@@ -14,14 +14,14 @@ from __future__ import absolute_import
 
 import sys, os, argparse, tempfile, subprocess, shutil
 
-from . import fs, staticsite
-from . import log
+import fs, staticsite
+import log
 
 def run_generate(t, opts):
     if opts.type != 'html' and opts.type != 'xml':
         return
 
-    from . import generators
+    import generators
 
     generator = generators.Xml(t, opts)
 
@@ -100,7 +100,7 @@ def run(args):
 
     log.setLevel(opts.loglevel)
 
-    from . import tree
+    import tree
 
     if not opts.output:
         sys.stderr.write("Please specify the output directory\n")

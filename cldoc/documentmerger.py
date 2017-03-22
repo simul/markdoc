@@ -4,7 +4,7 @@ import comment
 import nodes
 import sys, re
 
-from . import fs
+import fs
 
 class DocumentMerger:
     reinclude = re.compile('#<cldoc:include[(]([^)]*)[)]>')

@@ -12,7 +12,7 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 from cldoc.struct import Struct
 
-from . import utf8
+import utf8
 
 class Example(list):
     Item = Struct.define('Item', text='', classes=None)

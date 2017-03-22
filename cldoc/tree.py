@@ -22,9 +22,9 @@ import nodes
 import includepaths
 import documentmerger
 
-from . import example
-from . import utf8
-from . import log
+import example
+import utf8
+import log
 
 import os, sys, sets, re, glob, platform
 
