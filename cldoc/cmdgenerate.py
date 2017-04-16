@@ -32,7 +32,7 @@ def run_generate(t, opts):
         baseout = opts.output
 
     xmlout = os.path.join(baseout, 'xml')
-    #generator.generate(xmlout)
+    generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
     if opts.type == 'md':
         generator_md = generators.Md(t, opts)
         #mdout = os.path.join(baseout, 'md')

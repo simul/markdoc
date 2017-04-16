@@ -151,17 +151,28 @@ class Md(Generator):
     def doc_method(self,f,elem):
         arguments=[]
         ret_type=dict()
+        doc=''
+        brief=''
         for child in elem.getchildren():
             if child.tag=='return':
                 ret_type=self.return_type(child)
             elif child.tag=='argument':
                 arguments.append(self.argument(child))
+            elif child.tag=='brief':
+                brief=child.text
+            elif child.tag=='doc':
+                doc=child.text
         f.write(ret_type['type']+' '+elem.attrib['name'])
         args_txt=[]
         for arg in arguments:
             args_txt.append(arg['name'])
-        f.write(','.join(args_txt))
+        f.write('('+','.join(args_txt)+')')
         f.write('\n------\n\n')
+        if brief!='':
+            f.write(brief+'\n')
+        if doc!='':
+            f.write(doc+'\n')
+
 
     def write_md(self, elem, fname):
 
@@ -205,7 +216,7 @@ class Md(Generator):
             if child.tag=='class':
                 title=child.tag+' '+child.attrib['name']
                 ref=child.attrib['ref']
-                f.write(self.link_md(title,ref)+'\n')
+                f.write(self.link_md(title,ref)+'\n\n')
             elif child.tag=='base':
                 self.list_bases(f,child)
             elif child.tag=='constructor':
