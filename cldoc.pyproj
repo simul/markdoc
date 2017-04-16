@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{91ab4796-69d9-421c-b7a7-544a473f214b}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>scripts\cldoc-dev.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
+    <InterpreterVersion>2.7</InterpreterVersion>
+    <CommandLineArguments>generate -IC:\\Simul\\master -I"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\atlmfc\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1z -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-ignored-attributes -D_MSC_VER=1900 -- --type=md --output C:/Simul/documentation/ref C:/Simul/master/Simul/Base/*.h</CommandLineArguments>
+    <InterpreterPath>
+    </InterpreterPath>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="cldoc\clang\cindex.py" />
+    <Compile Include="cldoc\clang\enumerations.py" />
+    <Compile Include="cldoc\clang\__init__.py" />
+    <Compile Include="cldoc\cmdgenerate.py" />
+    <Compile Include="cldoc\cmdgir.py" />
+    <Compile Include="cldoc\cmdinspect.py" />
+    <Compile Include="cldoc\cmdserve.py" />
+    <Compile Include="cldoc\comment.py" />
+    <Compile Include="cldoc\defdict.py" />
+    <Compile Include="cldoc\documentmerger.py" />
+    <Compile Include="cldoc\example.py" />
+    <Compile Include="cldoc\fs.py" />
+    <Compile Include="cldoc\generators\generator.py" />
+    <Compile Include="cldoc\generators\html.py" />
+    <Compile Include="cldoc\generators\md.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cldoc\generators\report.py" />
+    <Compile Include="cldoc\generators\search.py" />
+    <Compile Include="cldoc\generators\xml.py" />
+    <Compile Include="cldoc\generators\__init__.py" />
+    <Compile Include="cldoc\includepaths.py" />
+    <Compile Include="cldoc\inspecttree.py" />
+    <Compile Include="cldoc\log.py" />
+    <Compile Include="cldoc\nodes\category.py" />
+    <Compile Include="cldoc\nodes\cclass.py" />
+    <Compile Include="cldoc\nodes\classtemplate.py" />
+    <Compile Include="cldoc\nodes\constructor.py" />
+    <Compile Include="cldoc\nodes\conversionfunction.py" />
+    <Compile Include="cldoc\nodes\cstruct.py" />
+    <Compile Include="cldoc\nodes\ctype.py" />
+    <Compile Include="cldoc\nodes\destructor.py" />
+    <Compile Include="cldoc\nodes\enum.py" />
+    <Compile Include="cldoc\nodes\enumvalue.py" />
+    <Compile Include="cldoc\nodes\field.py" />
+    <Compile Include="cldoc\nodes\function.py" />
+    <Compile Include="cldoc\nodes\functiontemplate.py" />
+    <Compile Include="cldoc\nodes\method.py" />
+    <Compile Include="cldoc\nodes\namespace.py" />
+    <Compile Include="cldoc\nodes\node.py" />
+    <Compile Include="cldoc\nodes\root.py" />
+    <Compile Include="cldoc\nodes\templated.py" />
+    <Compile Include="cldoc\nodes\templatetypeparameter.py" />
+    <Compile Include="cldoc\nodes\typedef.py" />
+    <Compile Include="cldoc\nodes\union.py" />
+    <Compile Include="cldoc\nodes\variable.py" />
+    <Compile Include="cldoc\nodes\__init__.py" />
+    <Compile Include="cldoc\staticsite.py" />
+    <Compile Include="cldoc\struct.py" />
+    <Compile Include="cldoc\tree.py" />
+    <Compile Include="cldoc\utf8.py" />
+    <Compile Include="cldoc\__init__.py" />
+    <Compile Include="setup.py" />
+    <Compile Include="tests\regression.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="cldoc-static\lib\cldoc-static-run.js" />
+    <Content Include="cldoc-static\lib\cldoc-static.js" />
+    <Content Include="cldoc\data\index.html" />
+    <Content Include="cldoc\data\javascript\cldoc.js" />
+    <Content Include="cldoc\data\javascript\highlight.js" />
+    <Content Include="cldoc\data\javascript\jquery-1.9.1.js" />
+    <Content Include="cldoc\data\javascript\jquery-ui-1.10.0.custom.min.js" />
+    <Content Include="cldoc\data\javascript\marked.js" />
+    <Content Include="cldoc\data\styles\cldoc.css" />
+    <Content Include="example\CMakeLists.txt" />
+    <Content Include="html\index.html" />
+    <Content Include="html\javascript\highlight.js" />
+    <Content Include="html\javascript\jquery-1.9.1.js" />
+    <Content Include="html\javascript\jquery-ui-1.10.0.custom.min.js" />
+    <Content Include="html\javascript\marked.js" />
+    <Content Include="html\media\close.svg" />
+    <Content Include="html\media\search.svg" />
+    <Content Include="scripts\cldoc-dev" />
+    <Content Include="scripts\cldoc-dev.py" />
+    <Content Include="scripts\inline" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="cldoc" />
+    <Folder Include="cldoc-static\" />
+    <Folder Include="cldoc-static\lib" />
+    <Folder Include="cldoc\clang" />
+    <Folder Include="cldoc\data" />
+    <Folder Include="cldoc\data\javascript" />
+    <Folder Include="cldoc\data\styles" />
+    <Folder Include="cldoc\generators" />
+    <Folder Include="cldoc\nodes" />
+    <Folder Include="example" />
+    <Folder Include="html" />
+    <Folder Include="html\javascript" />
+    <Folder Include="html\media" />
+    <Folder Include="scripts\" />
+    <Folder Include="tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
+  </ItemGroup>
+  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
+</Project>
