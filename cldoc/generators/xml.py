@@ -108,7 +108,7 @@ class Xml(Generator):
         tree = ElementTree.ElementTree(elem)
 
         self.indent(tree.getroot())
-
+        
         f = fs.fs.open(os.path.join(self.outdir, fname), 'w')
         tree.write(f, encoding='utf-8', xml_declaration=True)
         f.write('\n')

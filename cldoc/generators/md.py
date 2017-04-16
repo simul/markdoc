@@ -31,7 +31,7 @@ class Md(Generator):
 
     def generate(self, outdir):
         if not outdir:
-            outdir = 'md'
+            outdir = ''
 
         try:
             fs.fs.makedirs(outdir)
@@ -107,16 +107,20 @@ class Md(Generator):
 
     def ref_to_link(self,rf):
         parts=rf.split('#')
-        if parts.count==2:
+        if len(parts)==2:
             link=parts[1]
-            link=link.replace('::','.')+'.md'
+            link=link.replace('::',self.namespace_separator)
+            fullpath=os.path.join(self.outdir, link)
+            # Now this link might contain a path, or the current page might have a path.
+            relpath=os.path.relpath(fullpath,self.current_path).replace('\\','/')
+            link=relpath
         else:
             link=''
         return link
 
-    def link_md(self,f, title, rf):
+    def link_md(self,title, rf):
         lnk=self.ref_to_link(rf)
-        f.write('['+title+']('+lnk+')')
+        return '['+title+']('+lnk+')'
 
     def list_bases(self,f,elem):
         for child in elem.getchildren():
@@ -126,7 +130,7 @@ class Md(Generator):
                 ref=''
                 if child.attrib.has_key('ref'):
                     ref=child.attrib['ref']
-                self.link_md(f,title,ref)
+                f.write(self.link_md(title,ref))
         f.write('\n')
                 
     def return_type(self,elem):
@@ -168,36 +172,50 @@ class Md(Generator):
         tree = ElementTree.ElementTree(elem)
 
         self.indent(tree.getroot())
-        title=elem.attrib['name']
+        if elem.attrib.has_key('name'):
+            title=elem.attrib['name']
+        elif elem.tag=='index':
+            title='Index'
+        else:
+            title='Untitled'
         layout_name='reference'
 
         fullpath=os.path.join(self.outdir, fname)
 
+        self.current_path=''
         try:
             head_tail=os.path.split(fullpath)
-            os.makedirs(head_tail[0])
+            self.current_path=head_tail[0]
+            os.makedirs(self.current_path)
         except:
             pass
 
         f = fs.fs.open(fullpath, 'w')
         f.write('---\n'+'title: '+title+'\nlayout: '+layout_name+'\n---\n')
 
-        f.write(elem.tag+' ')
-        f.write(elem.attrib['id']+'\n')
-        f.write('===\n')
+        if elem.tag=='index':
+            f.write('Reference')
+        else:
+            f.write(elem.tag+' ')
+            f.write(elem.attrib['id'])
+        f.write('\n===\n')
         # children:
         for child in elem.getchildren():
             self.indent(child)
-            if child.tag=='Class':
+            if child.tag=='class':
                 title=child.tag+' '+child.attrib['name']
                 ref=child.attrib['ref']
-                self.link_md(f,title,ref)
+                f.write(self.link_md(title,ref)+'\n')
             elif child.tag=='base':
                 self.list_bases(f,child)
             elif child.tag=='constructor':
                 pass
             elif child.tag=='method':
                 self.doc_method(f,child)
+            elif child.tag=='namespace':
+                title=child.tag+' '+child.attrib['name']
+                ref=child.attrib['ref']
+                f.write(self.link_md(title,ref)+'\n')
         #tree.write(f, encoding='utf-8', xml_declaration=True)
 
         f.close()
@@ -611,10 +629,10 @@ class Md(Generator):
 
     def generate_page(self, node):
         elem = self.node_to_md(node)
-        namespace_separator='.'
+        self.namespace_separator='.'
         if self.namespaces_as_directories==True:
-            namespace_separator='/'
-        self.write_md(elem, node.qid.replace('::', namespace_separator) + '.md')
+            self.namespace_separator='/'
+        self.write_md(elem, node.qid.replace('::', self.namespace_separator) + '.md')
 
     def node_to_md_ref(self, node):
         elem = ElementTree.Element(node.classname)

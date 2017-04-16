@@ -32,11 +32,11 @@ def run_generate(t, opts):
         baseout = opts.output
 
     xmlout = os.path.join(baseout, 'xml')
-    generator.generate(xmlout)
+    #generator.generate(xmlout)
     if opts.type == 'md':
         generator_md = generators.Md(t, opts)
-        mdout = os.path.join(baseout, 'md')
-        generator_md.generate(mdout)
+        #mdout = os.path.join(baseout, 'md')
+        generator_md.generate(baseout)
 
     if opts.type == 'html':
         generators.Html(t).generate(baseout, opts.static, opts.custom_js, opts.custom_css)
