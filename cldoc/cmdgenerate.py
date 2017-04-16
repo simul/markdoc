@@ -16,9 +16,10 @@ import sys, os, argparse, tempfile, subprocess, shutil
 
 from . import fs, staticsite
 from . import log
+import glob
 
 def run_generate(t, opts):
-    if opts.type != 'html' and opts.type != 'xml':
+    if opts.type != 'html' and opts.type != 'xml' and opts.type != 'md':
         return
 
     from . import generators
@@ -32,6 +33,10 @@ def run_generate(t, opts):
 
     xmlout = os.path.join(baseout, 'xml')
     generator.generate(xmlout)
+    if opts.type == 'md':
+        generator_md = generators.Md(t, opts)
+        mdout = os.path.join(baseout, 'md')
+        generator_md.generate(mdout)
 
     if opts.type == 'html':
         generators.Html(t).generate(baseout, opts.static, opts.custom_js, opts.custom_css)
@@ -94,7 +99,11 @@ def run(args):
     cxxflags = args[:sep]
 
     opts = parser.parse_args(restargs)
-
+    newfiles=[]
+    for filepath in opts.files:
+        gfiles=glob.glob(filepath)
+        newfiles=newfiles+gfiles
+    opts.files=newfiles
     if opts.quiet:
         sys.stdout = open(os.devnull, 'w')
 

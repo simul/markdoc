@@ -12,6 +12,7 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 from .xml import Xml
 from .html import Html
+from .md import Md
 from .search import Search
 from .report import Report
 
