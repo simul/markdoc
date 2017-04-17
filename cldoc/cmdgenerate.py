@@ -35,7 +35,6 @@ def run_generate(t, opts):
     generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
     if opts.type == 'md':
         generator_md = generators.Md(t, opts)
-        #mdout = os.path.join(baseout, 'md')
         generator_md.generate(baseout)
 
     if opts.type == 'html':
@@ -69,6 +68,9 @@ def run(args):
     parser.add_argument('--output', default=None, metavar='DIR',
                           help='specify the output directory')
 
+    parser.add_argument('--md_output', default='', metavar='DIR',
+                          help='specify the relative markdown generated files output directory')
+     
     parser.add_argument('--language', default='c++', metavar='LANGUAGE',
                           help='specify the default parse language (c++, c or objc)')
 

@@ -62,7 +62,7 @@ class Md(Generator):
         if self.options.report:
             self.add_report()
 
-        self.write_md(self.index, 'index.md')
+        #self.write_md(self.index, 'index.md')
 
         print('Generated `{0}\''.format(outdir))
 
@@ -191,7 +191,10 @@ class Md(Generator):
             title='Untitled'
         layout_name='reference'
 
-        fullpath=os.path.join(self.outdir, fname)
+        if(elem.tag=='category'):
+            fullpath=os.path.join(self.outdir, fname)
+        else:
+            fullpath=os.path.join(os.path.join(self.outdir, 'ref'),fname)
 
         self.current_path=''
         try:
@@ -203,31 +206,37 @@ class Md(Generator):
 
         f = fs.fs.open(fullpath, 'w')
         f.write('---\n'+'title: '+title+'\nlayout: '+layout_name+'\n---\n')
-
-        if elem.tag=='index':
-            f.write('Reference')
+        if(elem.tag=='category'):
+            f.write(elem.attrib['name'])
+            f.write('\n===\n')
+            for child in elem.getchildren():
+                if child.tag=='doc':
+                    f.write(child.text)
         else:
-            f.write(elem.tag+' ')
-            f.write(elem.attrib['id'])
-        f.write('\n===\n')
-        # children:
-        for child in elem.getchildren():
-            self.indent(child)
-            if child.tag=='class':
-                title=child.tag+' '+child.attrib['name']
-                ref=child.attrib['ref']
-                f.write(self.link_md(title,ref)+'\n\n')
-            elif child.tag=='base':
-                self.list_bases(f,child)
-            elif child.tag=='constructor':
-                pass
-            elif child.tag=='method':
-                self.doc_method(f,child)
-            elif child.tag=='namespace':
-                title=child.tag+' '+child.attrib['name']
-                ref=child.attrib['ref']
-                f.write(self.link_md(title,ref)+'\n')
-        #tree.write(f, encoding='utf-8', xml_declaration=True)
+            if elem.tag=='index':
+                f.write('Reference')
+            else:
+                f.write(elem.tag+' ')
+                f.write(elem.attrib['id'])
+            f.write('\n===\n')
+            # children:
+            for child in elem.getchildren():
+                self.indent(child)
+                if child.tag=='class':
+                    title=child.tag+' '+child.attrib['name']
+                    ref=child.attrib['ref']
+                    f.write(self.link_md(title,ref)+'\n\n')
+                elif child.tag=='base':
+                    self.list_bases(f,child)
+                elif child.tag=='constructor':
+                    pass
+                elif child.tag=='method':
+                    self.doc_method(f,child)
+                elif child.tag=='namespace':
+                    title=child.tag+' '+child.attrib['name']
+                    ref=child.attrib['ref']
+                    f.write(self.link_md(title,ref)+'\n')
+            #tree.write(f, encoding='utf-8', xml_declaration=True)
 
         f.close()
 

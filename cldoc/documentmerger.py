@@ -8,7 +8,7 @@ from . import fs
 
 class DocumentMerger:
     reinclude = re.compile('#<cldoc:include[(]([^)]*)[)]>')
-
+    reheading = re.compile('(.*)\\s*{#(.*)}')
     def merge(self, mfilter, files):
         for f in files:
             if os.path.basename(f).startswith('.'):
@@ -39,7 +39,7 @@ class DocumentMerger:
 
                 if line == '':
                     continue
-
+            heading=DocumentMerger.reheading.search(line)
             if line.startswith(prefix) and line.endswith('>'):
                 if len(doc) > 0 and not category:
                     sys.stderr.write('Failed to merge file `{0}\': no #<cldoc:id> specified\n'.format(filename))
@@ -54,17 +54,19 @@ class DocumentMerger:
                 doc = []
                 category = line[len(prefix):-1]
                 first = True
+            elif heading:
+                category=heading.group(2)
             else:
                 doc.append(line)
+
+        if not category and len(doc) > 0:
+            category=filename
 
         if category:
             if not category in ret:
                 ordered.append(category)
 
             ret[category] = "\n".join(doc)
-        elif len(doc) > 0:
-            sys.stderr.write('Failed to merge file `{0}\': no #<cldoc:id> specified\n'.format(filename))
-            sys.exit(1)
 
         return [[c, ret[c]] for c in ordered]
 

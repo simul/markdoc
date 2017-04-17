@@ -167,7 +167,7 @@ class Tree(documentmerger.DocumentMerger):
             if f in self.processed:
                 continue
 
-            print('Processing {0}'.format(os.path.basename(f)))
+            #print('Processing {0}'.format(os.path.basename(f)))
 
             tu = self.index.parse(f, self.flags)
 

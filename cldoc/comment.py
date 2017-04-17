@@ -114,7 +114,7 @@ class Comment(object):
 
         def __new__(cls, s):
             ns = Comment.UnresolvedReference.reescape.sub(lambda x: '\\' + x.group(0), s)
-            ret = utf8.utf8.__new__(cls, utf8.utf8('&lt;{0}&gt;').format(utf8.utf8(ns)))
+            ret = utf8.utf8.__new__(cls, utf8.utf8('<{0}>').format(utf8.utf8(ns)))
 
             ret.orig = s
             return ret
