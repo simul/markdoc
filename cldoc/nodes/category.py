@@ -13,10 +13,14 @@
 from .node import Node
 
 class Category(Node):
-    def __init__(self, name):
+    def __init__(self, name, title):
         Node.__init__(self, None, None)
-
+        self._title=title
         self._name = name
+
+    @property
+    def title(self):
+        return self._title
 
     @property
     def name(self):

@@ -145,7 +145,10 @@ class Md(Generator):
         ret_arg['name']=elem.attrib['name']
         for child in elem.getchildren():
             if child.tag=='type':
-                ret_arg['type']=child.attrib['name']
+                if child.attrib.has_key('name'):
+                    ret_arg['type']=child.attrib['name']
+                else:
+                    ret_arg['type']=''
         return ret_arg
 
     def doc_method(self,f,elem):
@@ -173,6 +176,18 @@ class Md(Generator):
         if doc!='':
             f.write(doc+'\n')
 
+    def process_text(self,elem):
+        res=elem.text
+        for child in elem.getchildren():
+            if child.tag=="ref":
+                title=child.text
+                link=self.ref_to_link(child.attrib['ref'])
+                res+='[{0}]({1})'.format(title,link)
+                res+=child.tail
+            else:
+                res+=self.process_text(child)
+        res+=elem.tail
+        return res
 
     def write_md(self, elem, fname):
 
@@ -183,7 +198,9 @@ class Md(Generator):
         tree = ElementTree.ElementTree(elem)
 
         self.indent(tree.getroot())
-        if elem.attrib.has_key('name'):
+        if elem.attrib.has_key('title'):
+            title=elem.attrib['title']
+        elif elem.attrib.has_key('name'):
             title=elem.attrib['name']
         elif elem.tag=='index':
             title='Index'
@@ -191,10 +208,10 @@ class Md(Generator):
             title='Untitled'
         layout_name='reference'
 
-        if(elem.tag=='category'):
-            fullpath=os.path.join(self.outdir, fname)
-        else:
-            fullpath=os.path.join(os.path.join(self.outdir, 'ref'),fname)
+        # if(elem.tag=='category'):
+        fullpath=os.path.join(self.outdir, fname)
+        #else:
+        #    fullpath=os.path.join(os.path.join(self.outdir, 'ref'),fname)
 
         self.current_path=''
         try:
@@ -207,17 +224,16 @@ class Md(Generator):
         f = fs.fs.open(fullpath, 'w')
         f.write('---\n'+'title: '+title+'\nlayout: '+layout_name+'\n---\n')
         if(elem.tag=='category'):
-            f.write(elem.attrib['name'])
+            f.write(title)
             f.write('\n===\n')
             for child in elem.getchildren():
                 if child.tag=='doc':
-                    f.write(child.text)
+                    f.write(self.process_text(child))
         else:
             if elem.tag=='index':
                 f.write('Reference')
             else:
-                f.write(elem.tag+' ')
-                f.write(elem.attrib['id'])
+                f.write(elem.tag+' '+title)
             f.write('\n===\n')
             # children:
             for child in elem.getchildren():
@@ -236,6 +252,8 @@ class Md(Generator):
                     title=child.tag+' '+child.attrib['name']
                     ref=child.attrib['ref']
                     f.write(self.link_md(title,ref)+'\n')
+                else:
+                    print child.tag
             #tree.write(f, encoding='utf-8', xml_declaration=True)
 
         f.close()
@@ -660,7 +678,9 @@ class Md(Generator):
 
         # Add reference item to index
         self.add_ref_node_id(node, elem)
-
+        
+        if 'title' in props:
+            elem.set('title', props['title'])
         if 'name' in props:
             elem.set('name', props['name'])
 

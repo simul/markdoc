@@ -533,6 +533,8 @@ class Xml(Generator):
         # Add reference item to index
         self.add_ref_node_id(node, elem)
 
+        if 'title' in props:
+            elem.set('title', props['title'])
         if 'name' in props:
             elem.set('name', props['name'])
 

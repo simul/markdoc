@@ -226,6 +226,10 @@ class Node(object):
             parent = parent.parent
 
         return parent
+    
+    @property
+    def title(self):
+        return self.name
 
     @property
     def qid(self):
@@ -234,7 +238,10 @@ class Node(object):
         parent = self.semantic_parent
 
         if not parent:
-            return meid
+            if self.classname=='category':
+                return meid
+            else:
+                return 'ref::'+meid
         else:
             q = parent.qid
 
@@ -255,6 +262,7 @@ class Node(object):
         ret = {
             'id': self.qid,
             'name': self.name,
+            'title': self.title,
         }
 
         if self.is_anonymous:

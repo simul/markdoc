@@ -229,8 +229,10 @@ class Comment(object):
                     break
 
                 nds = newnds
-
+                
             if len(newnds) > 0:
+                if refname is None:
+                    refname=newnds[0].title
                 components.append((newnds, refname))
             else:
                 components.append(Comment.UnresolvedReference(name))

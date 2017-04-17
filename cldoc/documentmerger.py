@@ -23,7 +23,7 @@ class DocumentMerger:
         lines = contents.splitlines()
 
         ret = {}
-
+        title={}
         category = None
         doc = []
         first = False
@@ -53,26 +53,30 @@ class DocumentMerger:
 
                 doc = []
                 category = line[len(prefix):-1]
+                this_title=category
                 first = True
             elif heading:
                 category=heading.group(2)
+                this_title=heading.group(1)
             else:
                 doc.append(line)
 
         if not category and len(doc) > 0:
-            category=filename
+            parts=filename.replace('\\','/').replace('.md','').split('/')
+            category=parts[len(parts)-1]
+            this_title=category
 
         if category:
             if not category in ret:
                 ordered.append(category)
-
+            title[category]=this_title
             ret[category] = "\n".join(doc)
 
-        return [[c, ret[c]] for c in ordered]
+        return [[c, ret[c],title[c]] for c in ordered]
 
     def _normalized_qid(self, qid):
-        if qid == 'index':
-            return None
+        #if qid == 'index':
+        #    return None
 
         if qid.startswith('::'):
             return qid[2:]
@@ -103,21 +107,20 @@ class DocumentMerger:
         contents = self._read_merge_file(mfilter, filename)
         categories = self._split_categories(filename, contents)
 
-        for (category, docstr) in categories:
+        for (category, docstr, cat_title) in categories:
             parts = category.split('/')
 
             qid = self._normalized_qid(parts[0])
             key = 'doc'
 
-            if len(parts) > 1:
-                key = parts[1]
+            #if len(parts) > 1:
+            #    key = parts[1]
 
             if not self.qid_to_node[qid]:
-                self.add_categories([qid])
+                self.add_categories([[qid,cat_title]])
                 node = self.category_to_node[qid]
             else:
                 node = self.qid_to_node[qid]
-
             if key == 'doc':
                 node.merge_comment(comment.Comment(docstr, None), override=True)
             else:
@@ -127,7 +130,7 @@ class DocumentMerger:
     def add_categories(self, categories):
         root = None
 
-        for category in categories:
+        for category,title in categories:
             parts = category.split('::')
 
             root = self.root
@@ -149,7 +152,7 @@ class DocumentMerger:
                         break
 
                 if not found:
-                    s = nodes.Category(part)
+                    s = nodes.Category(part,title)
 
                     root.append(s)
                     root = s
