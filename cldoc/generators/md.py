@@ -182,7 +182,8 @@ class Md(Generator):
             if child.tag=="ref":
                 title=child.text
                 link=self.ref_to_link(child.attrib['ref'])
-                res+='[{0}]({1})'.format(title,link)
+                #res+='[{0}]({1})'.format(title,link)
+                res+='<a href="{1}">{0}</a>'.format(title,link)
                 res+=child.tail
             else:
                 res+=self.process_text(child)

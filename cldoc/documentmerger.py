@@ -53,11 +53,11 @@ class DocumentMerger:
 
                 doc = []
                 category = line[len(prefix):-1]
-                this_title=category
+                this_title=category.strip()
                 first = True
             elif heading:
                 category=heading.group(2)
-                this_title=heading.group(1)
+                this_title=heading.group(1).strip()
             else:
                 doc.append(line)
 
