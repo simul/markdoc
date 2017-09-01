@@ -8,7 +8,7 @@ from . import fs
 
 class DocumentMerger:
     reinclude = re.compile('#<cldoc:include[(]([^)]*)[)]>')
-    reheading = re.compile('(.*)\\s*{#(.*)}')
+    reheading = re.compile('(.*)\\s*{#(?:([0-9]*):)?(.*)}')
     def merge(self, mfilter, files):
         for f in files:
             if os.path.basename(f).startswith('.'):
@@ -28,6 +28,8 @@ class DocumentMerger:
         doc = []
         first = False
         ordered = []
+        weight = {}
+        this_weight=0
 
         for line in lines:
             prefix = '#<cldoc:'
@@ -56,11 +58,14 @@ class DocumentMerger:
                 this_title=category.strip()
                 first = True
             elif heading:
-                category=heading.group(2)
+                if heading.group(2):
+                    this_weight=int(heading.group(2))
+                category=heading.group(3)
                 this_title=heading.group(1).strip()
             else:
                 doc.append(line)
-
+        if not this_weight:
+            this_weight=0
         if not category and len(doc) > 0:
             parts=filename.replace('\\','/').replace('.md','').split('/')
             category=parts[len(parts)-1]
@@ -71,8 +76,9 @@ class DocumentMerger:
                 ordered.append(category)
             title[category]=this_title
             ret[category] = "\n".join(doc)
+            weight[category] = this_weight
 
-        return [[c, ret[c],title[c]] for c in ordered]
+        return [[c, ret[c],title[c],weight[c]] for c in ordered]
 
     def _normalized_qid(self, qid):
         #if qid == 'index':
@@ -107,7 +113,17 @@ class DocumentMerger:
         contents = self._read_merge_file(mfilter, filename)
         categories = self._split_categories(filename, contents)
 
-        for (category, docstr, cat_title) in categories:
+        for (category, docstr, cat_title, weight) in categories:
+            # First, split off any order number from the front e.g. 3:name
+            category=category.replace('::','_DOUBLECOLONSEPARATOR_')
+            front_back= category.split(':')
+            front=''
+            if len(front_back)>1:
+                category=front_back[1]
+                front=front_back[0]
+            else:
+                category=front_back[0]
+            category=category.replace('_DOUBLECOLONSEPARATOR_','::')
             parts = category.split('/')
 
             qid = self._normalized_qid(parts[0])
@@ -121,6 +137,7 @@ class DocumentMerger:
                 node = self.category_to_node[qid]
             else:
                 node = self.qid_to_node[qid]
+            node.weight=weight
             if key == 'doc':
                 node.merge_comment(comment.Comment(docstr, None), override=True)
             else:

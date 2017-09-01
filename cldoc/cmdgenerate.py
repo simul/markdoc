@@ -24,15 +24,15 @@ def run_generate(t, opts):
 
     from . import generators
 
-    generator = generators.Xml(t, opts)
-
     if opts.type == 'html' and opts.static:
         baseout = fs.fs.mkdtemp()
     else:
         baseout = opts.output
 
     xmlout = os.path.join(baseout, 'xml')
-    generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
+    if opts.type == 'xml':
+        generator = generators.Xml(t, opts)
+        generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
     if opts.type == 'md':
         generator_md = generators.Md(t, opts)
         generator_md.generate(baseout)
@@ -42,6 +42,9 @@ def run_generate(t, opts):
 
         if opts.static:
             staticsite.generate(baseout, opts)
+    if opts.post != '':
+        args=opts.post.split(' ')
+        subprocess.call(args,shell=True)
 
 def run(args):
     try:
@@ -94,6 +97,9 @@ def run(args):
 
     parser.add_argument('--custom-css', default=[], metavar='FILES', action='append',
                           help='specify additional css files to be merged into the html (only for when --output is html)')
+    
+    parser.add_argument('--post', default=None, metavar='POST',
+                          help='command to execute after completion')
 
     parser.add_argument('files', nargs='+', help='files to parse')
 

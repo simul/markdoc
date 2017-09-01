@@ -108,7 +108,7 @@ class Xml(Generator):
         tree = ElementTree.ElementTree(elem)
 
         self.indent(tree.getroot())
-        
+
         f = fs.fs.open(os.path.join(self.outdir, fname), 'w')
         tree.write(f, encoding='utf-8', xml_declaration=True)
         f.write('\n')
@@ -319,11 +319,11 @@ class Xml(Generator):
         elem.append(self.type_to_xml(node.type, node.parent))
 
     def set_access_attribute(self, node, elem):
-        if node.access == cindex.CXXAccessSpecifier.PROTECTED:
+        if node.access == cindex.AccessSpecifier.PROTECTED:
             elem.set('access', 'protected')
-        elif node.access == cindex.CXXAccessSpecifier.PRIVATE:
+        elif node.access == cindex.AccessSpecifier.PRIVATE:
             elem.set('access', 'private')
-        elif node.access == cindex.CXXAccessSpecifier.PUBLIC:
+        elif node.access == cindex.AccessSpecifier.PUBLIC:
             elem.set('access', 'public')
 
     def process_bases(self, node, elem, bases, tagname):
@@ -501,7 +501,7 @@ class Xml(Generator):
         self.call_type_specific(node, elem, 'to_xml')
 
         for child in node.sorted_children():
-            if child.access == cindex.CXXAccessSpecifier.PRIVATE:
+            if child.access == cindex.AccessSpecifier.PRIVATE:
                 continue
 
             self.refid(child)
@@ -524,7 +524,7 @@ class Xml(Generator):
 
     def generate_page(self, node):
         elem = self.node_to_xml(node)
-        self.write_xml(elem, node.qid.replace('::', '.') + '.xml')
+        self.write_xml(elem, node.qid.replace('::', '.').replace(':', '.') + '.xml')
 
     def node_to_xml_ref(self, node):
         elem = ElementTree.Element(node.classname)
@@ -547,7 +547,7 @@ class Xml(Generator):
 
     def generate_node(self, node):
         # Ignore private stuff
-        if node.access == cindex.CXXAccessSpecifier.PRIVATE:
+        if node.access == cindex.AccessSpecifier.PRIVATE:
             return
 
         self.refid(node)

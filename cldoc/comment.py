@@ -120,8 +120,11 @@ class Comment(object):
             return ret
 
     redocref = re.compile('(?P<isregex>[$]?)<(?:\\[(?P<refname>[^\\]]*)\\])?(?P<ref>operator(?:>>|>|>=)|[^>\n]+)>')
-    redoccode = re.compile('^    \\[code\\]\n(?P<code>(?:(?:    .*|)\n)*)', re.M)
+    redoccode = re.compile('\\\\code(.*\\n?)\\\\endcode', re.M | re.S)
+    #redoccode = re.compile('^    \\[code\\]\n(?P<code>(?:(?:    .*|)\n)*)', re.M)
     redocmcode = re.compile('(^ *(`{3,}|~{3,}).*?\\2)', re.M | re.S)
+
+    re_dox_ref=re.compile('\\\\(?P<command>[a-zA-Z]+)\\s+(?P<ref>\\w+)(?:\\s+"(?P<refname>\\w+)")?')
 
     def __init__(self, text, location):
         self.__dict__['docstrings'] = []
@@ -176,29 +179,52 @@ class Comment(object):
 
         for c in components:
             if isinstance(c, Comment.Example) or isinstance(c, Comment.MarkdownCode):
-                ret.append((c, None, None))
+                ret.append((c, None, None, None))
             else:
                 lastpos = 0
+                pos=0
+                while pos<len(c):
+                    doc_ref= Comment.redocref.search(c, pos)
+                    dox_ref= Comment.re_dox_ref.search(c,pos)
+                    min_pos=len(c)
+                    ref=None
+                    refname=None
+                    command=None
+                    if doc_ref:
+                        if doc_ref.start()<min_pos:
+                            min_pos=doc_ref.start()
+                    if dox_ref:
+                        if dox_ref.start()<min_pos:
+                            min_pos=dox_ref.start()
+                    if doc_ref and min_pos==doc_ref.start():
+                        m=doc_ref
+                        span = m.span(0)
+                        prefix = c[lastpos:span[0]]
+                        lastpos = span[1]
+                        command='ref'
+                        ref = m.group('ref')
+                        refname = m.group('refname')
 
-                for m in Comment.redocref.finditer(c):
-                    span = m.span(0)
 
-                    prefix = c[lastpos:span[0]]
-                    lastpos = span[1]
+                        if len(m.group('isregex')) > 0:
+                            ref = re.compile(ref)
 
-                    ref = m.group('ref')
-                    refname = m.group('refname')
-
-                    if not refname:
-                        refname = None
-
-                    if len(m.group('isregex')) > 0:
-                        ref = re.compile(ref)
-
-                    ret.append((prefix, ref, refname))
-
-                ret.append((c[lastpos:], None, None))
-
+                    elif dox_ref and min_pos==dox_ref.start():
+                        m=dox_ref
+                        span = m.span(0)
+                        prefix = c[lastpos:span[0]]
+                        lastpos = span[1]
+                        try:
+                            command = m.group('command')
+                            ref = m.group('ref')
+                            refname = m.group('refname')
+                        except:
+                            pass
+                    else:
+                        prefix=c[lastpos:]
+                        lastpos=len(c)
+                    ret.append((prefix,command,ref, refname))
+                    pos=lastpos
         return ret
 
     def resolve_refs_for_doc(self, doc, resolver, root):
@@ -206,36 +232,46 @@ class Comment(object):
         components = []
 
         for pair in comps:
-            prefix, name, refname = pair
+            prefix, command, name, refname = pair
             components.append(prefix)
+            if command==None:
+                pass
+            elif command=='ref':
+                if name is None:
+                    continue
 
-            if name is None:
-                continue
+                if isinstance(name, utf8.string):
+                    names = name.split('::')
+                else:
+                    names = [name]
 
-            if isinstance(name, utf8.string):
-                names = name.split('::')
+                nds = [root]
+
+                for j in range(len(names)):
+                    newnds = []
+
+                    for n in nds:
+                        newnds += resolver(n, names[j], j == 0)
+
+                    if len(newnds) == 0:
+                        break
+
+                    nds = newnds
+
+                if len(newnds) > 0:
+                    components.append((newnds, refname))
+                else:
+                    components.append(Comment.UnresolvedReference(name))
+            elif command=='a':
+                components.append('**'+name+'**')
+            elif command=='param':
+                components.append('\n**'+name+'**')
+            elif command=='return':
+                components.append('\n**return:** '+name)
+            elif command=='brief':
+                pass
             else:
-                names = [name]
-
-            nds = [root]
-
-            for j in range(len(names)):
-                newnds = []
-
-                for n in nds:
-                    newnds += resolver(n, names[j], j == 0)
-
-                if len(newnds) == 0:
-                    break
-
-                nds = newnds
-                
-            if len(newnds) > 0:
-                if refname is None:
-                    refname=newnds[0].title
-                components.append((newnds, refname))
-            else:
-                components.append(Comment.UnresolvedReference(name))
+                print(self.location.file.name+' ('+str(self.location.line)+'): warning: Unknown command \\'+ command)
 
         doc.components = components
 
@@ -436,17 +472,22 @@ class CommentsDatabase(object):
     def clean(self, token):
         prelen = token.extent.start.column - 1
         comment = token.spelling.strip()
-
-        if comment.startswith('//'):
-            if len(comment) > 2 and comment[2] == '-':
-                return None
+        
+        if comment.startswith('///') or comment.startswith('//!'):
+            return comment[3:].strip()
+        elif comment.startswith('//'):
+            # For our purposes, ordinary comments are ignored.
+            return None
+            #if len(comment) > 2 and comment[2] == '-':
+            #    return None
 
             return comment[2:].strip()
         elif comment.startswith('/*') and comment.endswith('*/'):
-            if comment[2] == '-':
+            # For our purposes, ! is required here.
+            if comment[2] != '!':
                 return None
 
-            lines = comment[2:-2].splitlines()
+            lines = comment[3:-2].splitlines()
 
             if len(lines) == 1 and len(lines[0]) > 0 and lines[0][0] == ' ':
                 return lines[0][1:].rstrip()

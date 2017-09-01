@@ -38,14 +38,14 @@ class Node(object):
         self._comment = comment
         self.children = []
         self.parent = None
-        self.access = cindex.CXXAccessSpecifier.PUBLIC
+        self.access = cindex.AccessSpecifier.PUBLIC
         self._comment_locations = []
         self._refs = []
         self.sort_index = 0
         self.num_anon = 0
         self.anonymous_id = 0
         self._refid = None
-
+        self.weight = 0
         self.sortid = 0
         cls = self.__class__
 
@@ -231,6 +231,20 @@ class Node(object):
     def title(self):
         return self.name
 
+    def output_filename(self,namespace_separator):
+        fn      =self.qid.replace('::',namespace_separator)
+        elems   =fn.split(':')
+        if len(elems)>1:
+            fn      =elems[len(elems)-1]
+        else:
+            fn      =elems[0]
+        if self.sort_index!=0:
+            parts=fn.split(namespace_separator)
+            if parts[len(parts)-1]!='index':
+                parts[len(parts)-1]=str(self.sort_index)+'_'+parts[len(parts)-1]
+                #fn=namespace_separator.join(parts)
+        return fn
+
     @property
     def qid(self):
         meid = self.name
@@ -263,14 +277,15 @@ class Node(object):
             'id': self.qid,
             'name': self.name,
             'title': self.title,
+            'weight': self.weight,
         }
 
         if self.is_anonymous:
             ret['anonymous'] = 'yes'
 
-        if self.access == cindex.CXXAccessSpecifier.PROTECTED:
+        if self.access == cindex.AccessSpecifier.PROTECTED:
             ret['access'] = 'protected'
-        elif self.access == cindex.CXXAccessSpecifier.PRIVATE:
+        elif self.access == cindex.AccessSpecifier.PRIVATE:
             ret['access'] = 'private'
 
         return ret

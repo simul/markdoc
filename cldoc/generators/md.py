@@ -28,6 +28,7 @@ class Md(Generator):
         self.tree = tree
         self.options = opts
         self.namespaces_as_directories=True
+        self._refid=None
 
     def generate(self, outdir):
         if not outdir:
@@ -65,6 +66,7 @@ class Md(Generator):
         #self.write_md(self.index, 'index.md')
 
         print('Generated `{0}\''.format(outdir))
+
 
     def add_report(self):
         from .report import Report
@@ -132,7 +134,32 @@ class Md(Generator):
                     ref=child.attrib['ref']
                 f.write(self.link_md(title,ref))
         f.write('\n')
-                
+      
+    def get_return_type(self,elem):
+        ret_type=''
+        for child in elem.getchildren():
+            if child.tag=='return':
+                for c in child.getchildren():
+                    if c.tag=='type':
+                        ret_type+=c.attrib['name']
+                        if c.attrib.has_key('qualifier'):
+                            ret_type=c.attrib['qualifier']+' ';
+        return ret_type
+
+    def get_brief(self,elem):
+        brief=''
+        for child in elem.getchildren():
+            if child.tag=='brief':
+                brief=child.text
+        return brief
+
+    def get_doc(self,elem):
+        doc=''
+        for child in elem.getchildren():
+            if child.tag=='doc':
+                doc=child.text
+        return doc
+
     def return_type(self,elem):
         ret_type=dict()
         for child in elem.getchildren():
@@ -151,30 +178,57 @@ class Md(Generator):
                     ret_arg['type']=''
         return ret_arg
 
-    def doc_method(self,f,elem):
+    def get_arguments(self,elem):
         arguments=[]
-        ret_type=dict()
+        for child in elem.getchildren():
+            if child.tag=='argument':
+                arguments.append(self.argument(child))
+        return arguments
+
+    def get_arguments_text(self,elem):
+        arguments=self.get_arguments(elem)
+        args_txt=[]
+        for arg in arguments:
+            args_txt.append(arg['name'])
+        arglist=','.join(args_txt)
+        return arglist
+
+    def get_typed_arguments_text(self,elem):
+        arguments=self.get_arguments(elem)
+        args_txt=[]
+        for arg in arguments:
+            tp_parts=[]
+            if arg['type']!='':
+                tp_parts.append(arg['type'])
+            if arg['name']!='':
+                tp_parts.append(arg['name'])
+            tp=' '.join(tp_parts)
+            args_txt.append(tp)
+        arglist=', '.join(args_txt)
+        return arglist
+
+    def doc_method(self,f,elem):
+        ret_type=''
         doc=''
         brief=''
         for child in elem.getchildren():
             if child.tag=='return':
-                ret_type=self.return_type(child)
-            elif child.tag=='argument':
-                arguments.append(self.argument(child))
+                ret_type=self.get_return_type(elem)
             elif child.tag=='brief':
                 brief=child.text
             elif child.tag=='doc':
                 doc=child.text
-        f.write(ret_type['type']+' '+elem.attrib['name'])
-        args_txt=[]
-        for arg in arguments:
-            args_txt.append(arg['name'])
-        f.write('('+','.join(args_txt)+')')
-        f.write('\n------\n\n')
+        #blank line before a heading h4:
+        f.write('\n### <a name="'+elem.attrib['name']+'"/>'+ret_type+' '+elem.attrib['name'])
+       
+        arglist=self.get_typed_arguments_text(elem)
+        f.write('('+arglist+')')
+        f.write('\n')
         if brief!='':
             f.write(brief+'\n')
         if doc!='':
             f.write(doc+'\n')
+
 
     def process_text(self,elem):
         res=elem.text
@@ -207,6 +261,10 @@ class Md(Generator):
             title='Index'
         else:
             title='Untitled'
+
+        weight=0
+        if elem.attrib.has_key('weight'):
+            weight=elem.attrib['weight']
         layout_name='reference'
 
         # if(elem.tag=='category'):
@@ -223,7 +281,7 @@ class Md(Generator):
             pass
 
         f = fs.fs.open(fullpath, 'w')
-        f.write('---\n'+'title: '+title+'\nlayout: '+layout_name+'\n---\n')
+        f.write('---\n'+'title: '+title+'\nlayout: '+layout_name+'\nweight: '+str(weight)+'\n---\n')
         if(elem.tag=='category'):
             f.write(title)
             f.write('\n===\n')
@@ -235,24 +293,90 @@ class Md(Generator):
                 f.write('Reference')
             else:
                 f.write(elem.tag+' '+title)
-            f.write('\n===\n')
+            f.write('\n===\n\n')
+            
+            brief=self.get_brief(elem)
+            doc=self.get_doc(elem)
+
+            if brief=='':
+                brief=doc
+            if doc=='':
+                doc=brief
+            if brief:
+                f.write(brief+'\n')
+
+            # method declarations
+            f.write('\n')
+            any_methods=False
+            any_namespaces=False
+            any_classes=False
+            any_bases=False
+            
+            for child in elem.getchildren():
+                if child.tag!='base':
+                    continue
+                any_bases=True
+
+            for child in elem.getchildren():
+                if child.tag!='method':
+                    continue
+                f.write('\n| '+self.get_return_type(child)+' | ['+child.attrib['name']+'](#'+child.attrib['name']+')('+self.get_typed_arguments_text(child)+') |')
+                any_methods=True
+            
+            for child in elem.getchildren():
+                if child.tag!='namespace':
+                    continue
+                title=child.tag+' '+child.attrib['name']
+                ref=child.attrib['ref']
+                lnk=self.ref_to_link(ref)
+                #f.write(self.link_md(title,ref)+'\n')
+                br=self.get_brief(child)
+                f.write('\n| ['+title+']('+lnk+') | '+br+' |')
+                any_namespaces=True
+                  
+            for child in elem.getchildren():
+                if child.tag!='class':
+                    continue
+                title=child.tag+' '+child.attrib['name']
+                ref=child.attrib['ref']
+                lnk=self.ref_to_link(ref)
+                br=self.get_brief(child)
+                f.write('\n| ['+title+']('+lnk+') | '+br+' |')
+                any_classes=True
+                  
+            f.write('\n')
+            # main text
+            if doc:
+                f.write('\n'+doc+'\n')
+            f.write('\n')
+
+            if any_bases:
+                f.write('Base Classes\n---\n')
+                for child in elem.getchildren():
+                    self.indent(child)
+                    if child.tag=='base':
+                        self.list_bases(f,child)
+
+            if any_methods:
+                f.write('Member Functions\n---\n')
+                for child in elem.getchildren():
+                    self.indent(child)
+                    if child.tag=='method':
+                        self.doc_method(f,child)
+
             # children:
             for child in elem.getchildren():
                 self.indent(child)
-                if child.tag=='class':
-                    title=child.tag+' '+child.attrib['name']
-                    ref=child.attrib['ref']
-                    f.write(self.link_md(title,ref)+'\n\n')
-                elif child.tag=='base':
+                if child.tag=='base':
                     self.list_bases(f,child)
+                elif child.tag=='namespace':
+                    pass
                 elif child.tag=='constructor':
                     pass
+                elif child.tag=='class':
+                    pass
                 elif child.tag=='method':
-                    self.doc_method(f,child)
-                elif child.tag=='namespace':
-                    title=child.tag+' '+child.attrib['name']
-                    ref=child.attrib['ref']
-                    f.write(self.link_md(title,ref)+'\n')
+                    pass
                 else:
                     print child.tag
             #tree.write(f, encoding='utf-8', xml_declaration=True)
@@ -296,8 +420,11 @@ class Md(Generator):
         return False
 
     def refid(self, node):
-        if not node._refid is None:
-            return node._refid
+        try:
+            if not node._refid is None:
+                return node._refid
+        except:
+            return ''
 
         parent = node
 
@@ -335,25 +462,25 @@ class Md(Generator):
 
         self.add_ref_node_id(node, elem)
 
-    def type_to_xml(self, tp, parent=None):
+    def type_to_md(self, tp, parent=None):
         elem = ElementTree.Element('type')
 
         if tp.is_constant_array:
             elem.set('size', str(tp.constant_array_size))
             elem.set('class', 'array')
-            elem.append(self.type_to_xml(tp.element_type, parent))
+            elem.append(self.type_to_md(tp.element_type, parent))
         elif tp.is_function:
             elem.set('class', 'function')
 
             result = ElementTree.Element('result')
-            result.append(self.type_to_xml(tp.function_result, parent))
+            result.append(self.type_to_md(tp.function_result, parent))
             elem.append(result)
 
             args = ElementTree.Element('arguments')
             elem.append(args)
 
             for arg in tp.function_arguments:
-                args.append(self.type_to_xml(arg, parent))
+                args.append(self.type_to_md(arg, parent))
         else:
             elem.set('name', tp.typename_for(parent))
 
@@ -375,35 +502,35 @@ class Md(Generator):
         self.add_ref_id(tp.decl, elem)
         return elem
 
-    def enumvalue_to_xml(self, node, elem):
+    def enumvalue_to_md(self, node, elem):
         elem.set('value', str(node.value))
 
-    def enum_to_xml(self, node, elem):
+    def enum_to_md(self, node, elem):
         if not node.typedef is None:
             elem.set('typedef', 'yes')
 
         if node.isclass:
             elem.set('class', 'yes')
 
-    def struct_to_xml(self, node, elem):
-        self.class_to_xml(node, elem)
+    def struct_to_md(self, node, elem):
+        self.class_to_md(node, elem)
 
         if not node.typedef is None:
             elem.set('typedef', 'yes')
 
-    def templatetypeparameter_to_xml(self, node, elem):
+    def templatetypeparameter_to_md(self, node, elem):
         dt = node.default_type
 
         if not dt is None:
             d = ElementTree.Element('default')
 
-            d.append(self.type_to_xml(dt))
+            d.append(self.type_to_md(dt))
             elem.append(d)
 
-    def templatenontypeparameter_to_xml(self, node, elem):
-        elem.append(self.type_to_xml(node.type))
+    def templatenontypeparameter_to_md(self, node, elem):
+        elem.append(self.type_to_md(node.type))
 
-    def function_to_xml(self, node, elem):
+    def function_to_md(self, node, elem):
         if not (isinstance(node, nodes.Constructor) or
                 isinstance(node, nodes.Destructor)):
             ret = ElementTree.Element('return')
@@ -411,7 +538,7 @@ class Md(Generator):
             if not node.comment is None and hasattr(node.comment, 'returns') and node.comment.returns:
                 ret.append(self.doc_to_md(node, node.comment.returns))
 
-            tp = self.type_to_xml(node.return_type, node.parent)
+            tp = self.type_to_md(node.return_type, node.parent)
 
             ret.append(tp)
             elem.append(ret)
@@ -424,11 +551,11 @@ class Md(Generator):
             if not node.comment is None and arg.name in node.comment.params:
                 ret.append(self.doc_to_md(node, node.comment.params[arg.name]))
 
-            ret.append(self.type_to_xml(arg.type, node.parent))
+            ret.append(self.type_to_md(arg.type, node.parent))
             elem.append(ret)
 
-    def method_to_xml(self, node, elem):
-        self.function_to_xml(node, elem)
+    def method_to_md(self, node, elem):
+        self.function_to_md(node, elem)
 
         if len(node.override) > 0:
             elem.set('override', 'yes')
@@ -450,24 +577,24 @@ class Md(Generator):
         if node.abstract:
             elem.set('abstract', 'yes')
 
-    def typedef_to_xml(self, node, elem):
-        elem.append(self.type_to_xml(node.type, node))
+    def typedef_to_md(self, node, elem):
+        elem.append(self.type_to_md(node.type, node))
 
-    def typedef_to_xml_ref(self, node, elem):
-        elem.append(self.type_to_xml(node.type, node))
+    def typedef_to_md_ref(self, node, elem):
+        elem.append(self.type_to_md(node.type, node))
 
-    def variable_to_xml(self, node, elem):
-        elem.append(self.type_to_xml(node.type, node.parent))
+    def variable_to_md(self, node, elem):
+        elem.append(self.type_to_md(node.type, node.parent))
 
-    def property_to_xml(self, node, elem):
-        elem.append(self.type_to_xml(node.type, node.parent))
+    def property_to_md(self, node, elem):
+        elem.append(self.type_to_md(node.type, node.parent))
 
     def set_access_attribute(self, node, elem):
-        if node.access == cindex.CXXAccessSpecifier.PROTECTED:
+        if node.access == cindex.AccessSpecifier.PROTECTED:
             elem.set('access', 'protected')
-        elif node.access == cindex.CXXAccessSpecifier.PRIVATE:
+        elif node.access == cindex.AccessSpecifier.PRIVATE:
             elem.set('access', 'private')
-        elif node.access == cindex.CXXAccessSpecifier.PUBLIC:
+        elif node.access == cindex.AccessSpecifier.PUBLIC:
             elem.set('access', 'public')
 
     def process_bases(self, node, elem, bases, tagname):
@@ -476,7 +603,7 @@ class Md(Generator):
 
             self.set_access_attribute(base, child)
 
-            child.append(self.type_to_xml(base.type, node))
+            child.append(self.type_to_md(base.type, node))
 
             if base.node and not base.node.comment is None and base.node.comment.brief:
                 child.append(self.doc_to_md(base.node, base.node.comment.brief, 'brief'))
@@ -497,7 +624,7 @@ class Md(Generator):
 
             elem.append(child)
 
-    def class_to_xml(self, node, elem):
+    def class_to_md(self, node, elem):
         self.process_bases(node, elem, node.bases, 'base')
         self.process_bases(node, elem, node.implements, 'implements')
 
@@ -519,8 +646,8 @@ class Md(Generator):
             else:
                 elem.set('abstract', 'true')
 
-    def field_to_xml(self, node, elem):
-        elem.append(self.type_to_xml(node.type, node.parent))
+    def field_to_md(self, node, elem):
+        elem.append(self.type_to_md(node.type, node.parent))
 
     def doc_to_md(self, parent, doc, tagname='doc'):
         doce = ElementTree.Element(tagname)
@@ -642,10 +769,10 @@ class Md(Generator):
         if not node.comment is None and node.comment.doc:
             elem.append(self.doc_to_md(node, node.comment.doc))
 
-        self.call_type_specific(node, elem, 'to_xml')
+        self.call_type_specific(node, elem, 'to_md')
 
         for child in node.sorted_children():
-            if child.access == cindex.CXXAccessSpecifier.PRIVATE:
+            if child.access == cindex.AccessSpecifier.PRIVATE:
                 continue
 
             self.refid(child)
@@ -659,7 +786,7 @@ class Md(Generator):
 
         return elem
 
-    def templated_to_xml_ref(self, node, element):
+    def templated_to_md_ref(self, node, element):
         for child in node.sorted_children():
             if not (isinstance(child, nodes.TemplateTypeParameter) or isinstance(child, nodes.TemplateNonTypeParameter)):
                 continue
@@ -671,7 +798,7 @@ class Md(Generator):
         self.namespace_separator='.'
         if self.namespaces_as_directories==True:
             self.namespace_separator='/'
-        self.write_md(elem, node.qid.replace('::', self.namespace_separator) + '.md')
+        self.write_md(elem, node.output_filename(self.namespace_separator) + '.md')
 
     def node_to_md_ref(self, node):
         elem = ElementTree.Element(node.classname)
@@ -684,17 +811,19 @@ class Md(Generator):
             elem.set('title', props['title'])
         if 'name' in props:
             elem.set('name', props['name'])
+        if 'weight' in props:
+            elem.set('weight', props['weight'])
 
         if not node.comment is None and node.comment.brief:
             elem.append(self.doc_to_md(node, node.comment.brief, 'brief'))
 
-        self.call_type_specific(node, elem, 'to_xml_ref')
+        self.call_type_specific(node, elem, 'to_md_ref')
 
         return elem
 
     def generate_node(self, node):
         # Ignore private stuff
-        if node.access == cindex.CXXAccessSpecifier.PRIVATE:
+        if node.access == cindex.AccessSpecifier.PRIVATE:
             return
 
         self.refid(node)

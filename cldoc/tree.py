@@ -50,19 +50,32 @@ if platform.system() == 'Darwin':
         if not lname is None:
             cindex.Config.set_library_file(lname)
 else:
-    versions = [None, '3.5', '3.4', '3.3', '3.2']
+    libclangs = [
+        'C:/Program Files (x86)/LLVM/bin'
+    ]
 
-    for v in versions:
-        name = 'clang'
+    found = False
 
-        if not v is None:
-            name += '-' + v
-
-        lname = find_library(name)
-
-        if not lname is None:
-            cindex.Config.set_library_file(lname)
+    for libclang in libclangs:
+        fclang=libclang+'/libclang.dll'
+        if os.path.exists(fclang):
+            cindex.Config.set_library_path(os.path.dirname(fclang))
+            found = True
             break
+    if not found:
+        versions = [None, '3.5', '3.4', '3.3', '3.2']
+
+        for v in versions:
+            name = 'clang'
+
+            if not v is None:
+                name += '-' + v
+
+            lname = find_library(name)
+
+            if not lname is None:
+                cindex.Config.set_library_file(lname)
+                break
 
 testconf = cindex.Config()
 
@@ -175,7 +188,11 @@ class Tree(documentmerger.DocumentMerger):
                 fatal = False
 
                 for d in tu.diagnostics:
-                    sys.stderr.write(d.format)
+                    #rewrite Clang errors in visual studio format.
+                    # e.g. C:\\vector.h:249:43: error: function declared 'cdecl' here was previously declared without calling convention
+                    # becomes C:\\vector.h(249): error: function declared 'cdecl' here was previously declared without calling convention
+                    formatted=re.sub(":(\d+):(?:\d+):", "(\\1):", d.format)
+                    sys.stderr.write(formatted)
                     sys.stderr.write("\n")
 
                     if d.severity == cindex.Diagnostic.Fatal or \
