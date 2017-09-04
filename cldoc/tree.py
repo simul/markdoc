@@ -86,7 +86,7 @@ except cindex.LibclangError as e:
     sys.exit(1)
 
 class Tree(documentmerger.DocumentMerger):
-    def __init__(self, files, flags):
+    def __init__(self, files, flags, options):
         self.processed = {}
         self.files, ok = self.expand_sources([os.path.realpath(f) for f in files])
 
@@ -120,6 +120,7 @@ class Tree(documentmerger.DocumentMerger):
         # Map from category name to the nodes.Category for that category
         self.category_to_node = Defdict()
 
+        self.options=options
         # Map from filename to comment.CommentsDatabase
         self.commentsdbs = Defdict()
 
@@ -221,7 +222,7 @@ class Tree(documentmerger.DocumentMerger):
                 extractfiles.append(filename)
 
             for e in extractfiles:
-                db = comment.CommentsDatabase(e, tu)
+                db = comment.CommentsDatabase(e, tu, self.options)
 
                 self.add_categories(db.category_names)
                 self.commentsdbs[e] = db
@@ -236,7 +237,6 @@ class Tree(documentmerger.DocumentMerger):
         # Construct hierarchy of nodes.
         for node in self.all_nodes:
             q = node.qid
-
             if node.parent is None:
                 par = self.find_parent(node)
 
@@ -545,7 +545,7 @@ class Tree(documentmerger.DocumentMerger):
                         for node in ret:
                             self.register_node(node, par)
 
-                ignoretop = [cindex.CursorKind.TYPE_REF, cindex.CursorKind.PARM_DECL]
+                ignoretop = [cindex.CursorKind.FRIEND, cindex.CursorKind.TYPE_REF, cindex.CursorKind.TEMPLATE_REF, cindex.CursorKind.NAMESPACE_REF,cindex.CursorKind.PARM_DECL]
 
                 if (not par or ret is None) and not item.kind in ignoretop:
                     log.warning("Unhandled cursor: %s", item.kind)

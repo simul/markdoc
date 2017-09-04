@@ -124,9 +124,9 @@ class Comment(object):
     #redoccode = re.compile('^    \\[code\\]\n(?P<code>(?:(?:    .*|)\n)*)', re.M)
     redocmcode = re.compile('(^ *(`{3,}|~{3,}).*?\\2)', re.M | re.S)
 
-    re_dox_ref=re.compile('\\\\(?P<command>[a-zA-Z]+)\\s+(?P<ref>\\w+)(?:\\s+"(?P<refname>\\w+)")?')
+    re_dox_ref=re.compile('\\\\(?P<command>[a-zA-Z]+)\\s+(?P<ref>\\w+)(?:\\s+"(?P<refname>.*)")?')
 
-    def __init__(self, text, location):
+    def __init__(self, text, location, opts):
         self.__dict__['docstrings'] = []
         self.__dict__['text'] = text
 
@@ -135,6 +135,9 @@ class Comment(object):
 
         self.doc = text
         self.brief = ''
+        self.images=[]
+        self.imagepaths=[]
+        self.options=opts
 
     def __setattr__(self, name, val):
         if not name in self.docstrings:
@@ -235,8 +238,15 @@ class Comment(object):
             prefix, command, name, refname = pair
             components.append(prefix)
             if command==None:
-                pass
-            elif command=='ref':
+                continue
+            lineno=int(0)
+            filename=''
+            if self.location:
+                filename=self.location.file.name
+                if self.location.line:
+                    lineno=self.location.line
+       
+            if command=='ref':
                 if name is None:
                     continue
 
@@ -262,16 +272,34 @@ class Comment(object):
                     components.append((newnds, refname))
                 else:
                     components.append(Comment.UnresolvedReference(name))
-            elif command=='a':
+            elif command=='a' or command=='em':
                 components.append('**'+name+'**')
-            elif command=='param':
+            elif command=='param' or command=='p':
                 components.append('\n**'+name+'**')
             elif command=='return':
                 components.append('\n**return:** '+name)
             elif command=='brief':
                 pass
+            elif command=='image':
+                parts=os.path.split(filename);
+                path=''
+                if len(parts)>0:
+                    path=parts[0]
+                imagepaths=[path]
+                found=False
+                for i in imagepaths:
+                    filepath=i+'/'+refname
+                    if os.path.exists(filepath):
+                        found=True
+                        break
+                if not found:
+                    print(filename+' ('+str(lineno)+'): warning: Image not found: '+ filepath)
+                else:
+                    components.append('[![alt text]("'+refname+' "'+refname+'")')
+                    self.images.append(refname)
+                    self.imagepaths.append(i)
             else:
-                print(self.location.file.name+' ('+str(self.location.line)+'): warning: Unknown command \\'+ command)
+                print(filename+' ('+str(lineno)+'): warning: Unknown command \\'+ command)
 
         doc.components = components
 
@@ -337,12 +365,12 @@ class RangeMap(Sorted):
 class CommentsDatabase(object):
     cldoc_instrre = re.compile('^cldoc:([a-zA-Z_-]+)(\(([^\)]*)\))?')
 
-    def __init__(self, filename, tu):
+    def __init__(self, filename, tu, opts):
         self.filename = filename
 
         self.categories = RangeMap()
         self.comments = Sorted(key=lambda x: x.location.offset)
-
+        self.options=opts
         self.extract(filename, tu)
 
     def parse_cldoc_instruction(self, token, s):
@@ -432,7 +460,7 @@ class CommentsDatabase(object):
         if self.parse_cldoc_instruction(token, s.strip()):
             return
 
-        comment = Comment(s, token.location)
+        comment = Comment(s, token.location,self.options)
         self.comments.insert(comment)
 
     def extract_loop(self, iter):
@@ -514,21 +542,26 @@ from pyparsing import *
 
 class Parser:
     ParserElement.setDefaultWhitespaceChars(' \t\r')
-
+    
+    #All variables defined on the class level in Python are considered static.
+    # Here, we define static members of the class Parser, from pyparsing:
     identifier = Word(alphas + '_', alphanums + '_')
-
-    brief = restOfLine.setResultsName('brief') + lineEnd
+    
+    # I have modified the parser to make brief the default return, and body is optional. Only if there is a double lineEnd will there be a body,
+    # and it is everything from the first such double lineEnd to the end of the text.
+    briefline = NotAny('@') + ((Regex('[^\n]+') + lineEnd))
+    brief = ZeroOrMore(lineEnd) + Combine(OneOrMore(briefline)).setResultsName('brief') 
 
     paramdesc = restOfLine + ZeroOrMore(lineEnd + ~('@' | lineEnd) + Regex('[^\n]+')) + lineEnd.suppress()
     param = '@' + identifier.setResultsName('name') + White() + Combine(paramdesc).setResultsName('description')
 
     preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True))
     postparams = ZeroOrMore(param.setResultsName('postparam', listAllMatches=True))
-
+    
     bodyline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
-    body = ZeroOrMore(lineEnd) + Combine(ZeroOrMore(bodyline)).setResultsName('body')
+    body = OneOrMore(lineEnd) + Combine(ZeroOrMore(bodyline)).setResultsName('body')
 
-    doc = brief + preparams + body + postparams
+    doc = Optional(brief) + preparams + Optional(body) + postparams
 
     @staticmethod
     def parse(s):

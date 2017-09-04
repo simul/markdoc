@@ -13,12 +13,15 @@
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
     <InterpreterVersion>2.7</InterpreterVersion>
-    <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\atlmfc\\include" -I"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --md_output ref C:/Simul/4.2/Simul/Base/*.h C:/Simul/4.2/Simul/Math/*.h --post "c:/Simul/4.2/Simul/Help/build.bat"</CommandLineArguments>
+    <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"$(VCINSTALLDIR)\\atlmfc\\include" -I"$(VCINSTALLDIR)\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --strip "$(SIMUL)/" --md_output ref $(SIMUL)/Sky/*.h $(SIMUL)/Clouds/*.h --merge C:/Simul/4.2/Simul/Help --clean C:/Simul/docs/ref --post "$(SIMUL)/Help/build.bat"</CommandLineArguments>
     <InterpreterPath>
     </InterpreterPath>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>Path=C:\Program Files\LLVM\bin;$(Path)
-also=--merge C:/Simul/4.2/Simul/Help </Environment>
+also=
+test= 
+
+</Environment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />

@@ -98,6 +98,12 @@ def run(args):
     parser.add_argument('--custom-css', default=[], metavar='FILES', action='append',
                           help='specify additional css files to be merged into the html (only for when --output is html)')
     
+    parser.add_argument('--clean', default=None, metavar='CLEAN',
+                          help='directory to clean before running')
+
+    parser.add_argument('--strip', default=None, metavar='STRIP',
+                          help='path to remove from filenames')
+
     parser.add_argument('--post', default=None, metavar='POST',
                           help='command to execute after completion')
 
@@ -114,11 +120,22 @@ def run(args):
     opts.files=newfiles
     if opts.quiet:
         sys.stdout = open(os.devnull, 'w')
+    if opts.clean:
+        r = glob.glob(opts.clean+'/*')
+        for i in r:
+            if os.path.isdir(i):
+                shutil.rmtree(i)
+            else:
+                os.remove(i)
 
     log.setLevel(opts.loglevel)
 
     from . import tree
-
+    
+    if opts.strip:
+        opts.strip=opts.strip.replace('\\','/')
+        opts.strip=opts.strip.replace('//','/')
+    
     if not opts.output:
         sys.stderr.write("Please specify the output directory\n")
         sys.exit(1)
@@ -137,7 +154,7 @@ def run(args):
         cxxflags.append('-x')
         cxxflags.append(opts.language)
 
-    t = tree.Tree(opts.files, cxxflags)
+    t = tree.Tree(opts.files, cxxflags, opts)
 
     t.process()
 

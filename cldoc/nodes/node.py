@@ -155,12 +155,23 @@ class Node(object):
         for loc in self._comment_locations:
             yield loc
 
+    def has_any_docs(self):
+        if len(self.children)==0:
+            return self.comment!=None
+        else:
+            for i in self.children:
+                if i.has_any_docs():
+                    return True
+        return False
+
     def parse_comment(self):
         # Just extract brief and doc
+        # RVK: Here, pyparsing is used. The grammar defined in Parser splits the comment into brief and (optionally) body.
         self._parsed_comment = Parser.parse(self._comment.text)
 
         if len(self._parsed_comment.brief) > 0:
             self._comment.brief = self._parsed_comment.brief
+        if len(self._parsed_comment.body) > 0:
             self._comment.doc = self._parsed_comment.body
 
     @property

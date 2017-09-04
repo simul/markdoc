@@ -139,7 +139,7 @@ class DocumentMerger:
                 node = self.qid_to_node[qid]
             node.weight=weight
             if key == 'doc':
-                node.merge_comment(comment.Comment(docstr, None), override=True)
+                node.merge_comment(comment.Comment(docstr, None, self.options), override=True)
             else:
                 sys.stderr.write('Unknown type `{0}\' for id `{1}\'\n'.format(key, parts[0]))
                 sys.exit(1)

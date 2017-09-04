@@ -136,14 +136,15 @@ class Md(Generator):
         f.write('\n')
       
     def get_return_type(self,elem):
-        ret_type=''
+        ret_parts=[]
         for child in elem.getchildren():
             if child.tag=='return':
                 for c in child.getchildren():
                     if c.tag=='type':
-                        ret_type+=c.attrib['name']
+                        ret_parts.append(c.attrib['name'])
                         if c.attrib.has_key('qualifier'):
-                            ret_type=c.attrib['qualifier']+' ';
+                            ret_parts.append(c.attrib['qualifier']);
+        ret_type=' '.join(ret_parts);
         return ret_type
 
     def get_brief(self,elem):
@@ -152,6 +153,17 @@ class Md(Generator):
             if child.tag=='brief':
                 brief=child.text
         return brief
+    
+    def get_location(self,elem):
+        location=''
+        if elem.attrib.has_key('location'):
+            return elem.attrib['location']
+        return location
+    def get_lib(self,elem):
+        lib=''
+        if elem.attrib.has_key('lib'):
+            return elem.attrib['lib']
+        return lib
 
     def get_doc(self,elem):
         doc=''
@@ -206,6 +218,13 @@ class Md(Generator):
             args_txt.append(tp)
         arglist=', '.join(args_txt)
         return arglist
+    
+    def has_doc(self,elem):
+        for child in elem.getchildren():
+            if child.tag=='brief' or child.tag=='doc':
+                if child.text!='':
+                    return True
+        return False
 
     def doc_method(self,f,elem):
         ret_type=''
@@ -229,6 +248,15 @@ class Md(Generator):
         if doc!='':
             f.write(doc+'\n')
 
+    def doc_field(self,f,elem):
+        doc=''
+        brief=''
+        for child in elem.getchildren():
+            if child.tag=='brief':
+                brief=child.text
+            elif child.tag=='doc':
+                doc=child.text
+        f.write('\n**'+elem.attrib['name']+'** '+brief+' '+doc+'\n')
 
     def process_text(self,elem):
         res=elem.text
@@ -247,8 +275,6 @@ class Md(Generator):
     def write_md(self, elem, fname):
 
         self.written[fname] = True
-
-        elem.attrib['xmlns'] = 'http://jessevdk.github.com/cldoc/1.0'
 
         tree = ElementTree.ElementTree(elem)
 
@@ -279,6 +305,7 @@ class Md(Generator):
             os.makedirs(self.current_path)
         except:
             pass
+        print('Documenting '+title)
 
         f = fs.fs.open(fullpath, 'w')
         f.write('---\n'+'title: '+title+'\nlayout: '+layout_name+'\nweight: '+str(weight)+'\n---\n')
@@ -294,7 +321,12 @@ class Md(Generator):
             else:
                 f.write(elem.tag+' '+title)
             f.write('\n===\n\n')
-            
+            location=self.get_location(elem)
+            lib=self.get_lib(elem)
+            if location and location!='':
+                f.write('| Include: | '+location+' |\n\n')
+            if lib and lib!='':
+                f.write('| Library: | '+lib+' |\n\n')
             brief=self.get_brief(elem)
             doc=self.get_doc(elem)
 
@@ -307,42 +339,65 @@ class Md(Generator):
 
             # method declarations
             f.write('\n')
-            any_methods=False
-            any_namespaces=False
-            any_classes=False
-            any_bases=False
+            namespaces=[]
+            classes=[]
+            methods=[]
+            bases=[]
+            fields=[]
+            typedefs=[]
+            enums=[]
+            variables=[]
+            for child in elem.getchildren():
+                if child.tag=='base':
+                    bases.append(child)
+                elif child.tag=='class' or child.tag=='struct':
+                    classes.append(child)
+                elif child.tag=='method' or child.tag=='function' or child.tag=='constructor' or child.tag=='destructor':
+                    if self.has_doc(child):
+                        methods.append(child)
+                elif child.tag=='namespace':
+                    namespaces.append(child)
+                elif child.tag=='field':
+                    fields.append(child)
+                elif child.tag=='typedef':
+                    typedefs.append(child)
+                elif child.tag=='enum':
+                    enums.append(child)
+                elif child.tag=='variable':
+                    variables.append(child)
+                elif child.tag=='brief' or child.tag=='doc':
+                    pass
+                else:
+                    print(child.tag)
             
-            for child in elem.getchildren():
-                if child.tag!='base':
-                    continue
-                any_bases=True
-
-            for child in elem.getchildren():
-                if child.tag!='method':
-                    continue
-                f.write('\n| '+self.get_return_type(child)+' | ['+child.attrib['name']+'](#'+child.attrib['name']+')('+self.get_typed_arguments_text(child)+') |')
-                any_methods=True
-            
-            for child in elem.getchildren():
-                if child.tag!='namespace':
-                    continue
+            for child in namespaces:
                 title=child.tag+' '+child.attrib['name']
                 ref=child.attrib['ref']
                 lnk=self.ref_to_link(ref)
                 #f.write(self.link_md(title,ref)+'\n')
                 br=self.get_brief(child)
                 f.write('\n| ['+title+']('+lnk+') | '+br+' |')
-                any_namespaces=True
-                  
-            for child in elem.getchildren():
-                if child.tag!='class':
-                    continue
-                title=child.tag+' '+child.attrib['name']
-                ref=child.attrib['ref']
-                lnk=self.ref_to_link(ref)
-                br=self.get_brief(child)
-                f.write('\n| ['+title+']('+lnk+') | '+br+' |')
-                any_classes=True
+            
+            if len(classes):    
+                f.write('\nClasses and Structures\n---\n')  
+                for child in classes:
+                    title=child.attrib['name']
+                    ref=child.attrib['ref']
+                    if self.has_doc(child):
+                        lnk=self.ref_to_link(ref)
+                        title='['+title+']('+lnk+')'
+                    
+                    br=self.get_brief(child)
+                    # can't have newlines without breaking the table structure.
+                    br=br.replace('\n','<br>')
+                    f.write('\n| '+child.tag+' '+title+' | '+br+' |')
+                f.write('\n')
+                
+            if len(methods):    
+                f.write('\nFunctions\n---\n')  
+                for child in methods:
+                    f.write('\n| '+self.get_return_type(child)+' | ['+child.attrib['name']+'](#'+child.attrib['name']+')('+self.get_typed_arguments_text(child)+') |')
+                    any_methods=True
                   
             f.write('\n')
             # main text
@@ -350,35 +405,35 @@ class Md(Generator):
                 f.write('\n'+doc+'\n')
             f.write('\n')
 
-            if any_bases:
-                f.write('Base Classes\n---\n')
-                for child in elem.getchildren():
+            if len(bases)>0:
+                f.write('\nBase Classes\n---\n')
+                for child in bases:
                     self.indent(child)
                     if child.tag=='base':
                         self.list_bases(f,child)
 
-            if any_methods:
-                f.write('Member Functions\n---\n')
-                for child in elem.getchildren():
+            if len(methods)>0:
+                f.write('\nFunctions\n---\n')
+                for child in methods:
                     self.indent(child)
-                    if child.tag=='method':
-                        self.doc_method(f,child)
-
+                    self.doc_method(f,child)
+            
+            if len(fields)>0:
+                f.write('\nFields\n---\n')     
+            if len(variables)>0:
+                f.write('\nVariables\n---\n')    
+            if len(typedefs)>0:
+                f.write('\nTypedefs\n---\n')    
+            if len(enums)>0:
+                f.write('\nEnums\n---\n')       
+           
             # children:
             for child in elem.getchildren():
                 self.indent(child)
                 if child.tag=='base':
                     self.list_bases(f,child)
-                elif child.tag=='namespace':
-                    pass
-                elif child.tag=='constructor':
-                    pass
-                elif child.tag=='class':
-                    pass
-                elif child.tag=='method':
-                    pass
-                else:
-                    print child.tag
+                elif child.tag=='field':
+                    self.doc_field(f,child)
             #tree.write(f, encoding='utf-8', xml_declaration=True)
 
         f.close()
@@ -762,7 +817,14 @@ class Md(Generator):
         for prop in props:
             if props[prop]:
                 elem.set(prop, props[prop])
-
+        if node.cursor:
+            location=node.cursor.location.file.name
+            if location!='':
+                location=location.replace('\\','/')
+                location=location.replace('//','/')
+                if self.options.strip!=None:
+                    location=location.replace(self.options.strip,'')
+                elem.set('location',location)
         if not node.comment is None and node.comment.brief:
             elem.append(self.doc_to_md(node, node.comment.brief, 'brief'))
 
@@ -794,6 +856,9 @@ class Md(Generator):
             element.append(self.node_to_md(child))
 
     def generate_page(self, node):
+        # ignore nodes containing no documentation
+        if not node.has_any_docs():
+            return
         elem = self.node_to_md(node)
         self.namespace_separator='.'
         if self.namespaces_as_directories==True:
