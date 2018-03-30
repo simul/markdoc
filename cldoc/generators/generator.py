@@ -17,7 +17,8 @@ class Generator(object):
 
     def generate(self, outdir):
         self.outdir = outdir
-
+        
+        self.generate_node(self.tree.root)
         for node in self.tree.root.sorted_children():
             self.generate_node(node)
 

@@ -62,6 +62,8 @@ class DocumentMerger:
                     this_weight=int(heading.group(2))
                 category=heading.group(3)
                 this_title=heading.group(1).strip()
+                line=this_title
+                doc.append(line)
             else:
                 doc.append(line)
         if not this_weight:
@@ -81,8 +83,8 @@ class DocumentMerger:
         return [[c, ret[c],title[c],weight[c]] for c in ordered]
 
     def _normalized_qid(self, qid):
-        #if qid == 'index':
-        #    return None
+        if qid == 'ref':
+            return None
 
         if qid.startswith('::'):
             return qid[2:]
@@ -131,15 +133,19 @@ class DocumentMerger:
 
             #if len(parts) > 1:
             #    key = parts[1]
-
+            # 'ref' means the root of the reference:
+            if qid=='ref':
+                qid=None
             if not self.qid_to_node[qid]:
                 self.add_categories([[qid,cat_title]])
                 node = self.category_to_node[qid]
             else:
                 node = self.qid_to_node[qid]
+                if qid==None:
+                    node.set_title(cat_title)
             node.weight=weight
             if key == 'doc':
-                node.merge_comment(comment.Comment(docstr, None, self.options), override=True)
+                node.merge_comment(comment.Comment(docstr, filename, self.options), override=True)
             else:
                 sys.stderr.write('Unknown type `{0}\' for id `{1}\'\n'.format(key, parts[0]))
                 sys.exit(1)

@@ -179,10 +179,11 @@ class Comment(object):
 
         # First split examples
         components = self.redoccode_split(doc)
-
+        line_offset=0
         for c in components:
             if isinstance(c, Comment.Example) or isinstance(c, Comment.MarkdownCode):
-                ret.append((c, None, None, None))
+                ret.append((line_offset, c, None, None, None))
+                line_offset+=c.count('\n')
             else:
                 lastpos = 0
                 pos=0
@@ -226,8 +227,9 @@ class Comment(object):
                     else:
                         prefix=c[lastpos:]
                         lastpos=len(c)
-                    ret.append((prefix,command,ref, refname))
+                    ret.append((line_offset,prefix,command,ref, refname))
                     pos=lastpos
+                    line_offset+=prefix.count('\n')
         return ret
 
     def resolve_refs_for_doc(self, doc, resolver, root):
@@ -235,17 +237,21 @@ class Comment(object):
         components = []
 
         for pair in comps:
-            prefix, command, name, refname = pair
+            offset, prefix, command, name, refname = pair
             components.append(prefix)
             if command==None:
                 continue
             lineno=int(0)
             filename=''
             if self.location:
-                filename=self.location.file.name
-                if self.location.line:
-                    lineno=self.location.line
-       
+                if self.location.__class__.__name__=="SourceLocation":
+                    filename=self.location.file.name
+                    if self.location.line:
+                        lineno=self.location.line
+                else:
+                    filename=self.location
+                    lineno=0
+            lineno+=offset
             if command=='ref':
                 if name is None:
                     continue
@@ -278,6 +284,8 @@ class Comment(object):
                 components.append('\n**'+name+'**')
             elif command=='return':
                 components.append('\n**return:** '+name)
+            elif command=='toc':
+                components.append('\n###Contents\n')
             elif command=='brief':
                 pass
             elif command=='image':
@@ -299,6 +307,8 @@ class Comment(object):
                     self.images.append(refname)
                     self.imagepaths.append(i)
             else:
+                if filename=='':
+                    print(': warning: Unknown command \\'+ command)
                 print(filename+' ('+str(lineno)+'): warning: Unknown command \\'+ command)
 
         doc.components = components

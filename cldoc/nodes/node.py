@@ -207,7 +207,7 @@ class Node(object):
     @property
     def name(self):
         if self.cursor is None:
-            ret = ''
+            ret = 'ref'
         else:
             ret = self.cursor.spelling
 
@@ -265,6 +265,8 @@ class Node(object):
         if not parent:
             if self.classname=='category':
                 return meid
+            elif self.name=='ref':  # root
+                return 'ref'
             else:
                 return 'ref::'+meid
         else:

@@ -120,7 +120,6 @@ class TranslationUnitSaveError(Exception):
 
     def __init__(self, enumeration, message):
         assert isinstance(enumeration, int)
-
         if enumeration < 1 or enumeration > 3:
             raise Exception("Encountered undefined TranslationUnit save error "
                             "constant: %d. Please file a bug to have this "
@@ -169,6 +168,12 @@ class _CXString(Structure):
         assert isinstance(res, _CXString)
         return conf.lib.clang_getCString(res)
 
+class GenericLocation():
+    def __init__(self,file,line,col):
+        self.file=file
+        self.line=line
+        self.column=col
+
 class SourceLocation(Structure):
     """
     A SourceLocation represents a particular location within a source file.
@@ -195,7 +200,13 @@ class SourceLocation(Structure):
         a particular translation unit.
         """
         return conf.lib.clang_getLocation(tu, file, line, column)
-
+    @staticmethod
+    def from_file_line(file, line):
+        """
+        Create a 
+        """
+        loc=GenericLocation(file,line,0)
+        return loc
     @staticmethod
     def from_offset(tu, file, offset):
         """Retrieve a SourceLocation from a given character offset.
@@ -2444,6 +2455,7 @@ class TranslationUnit(ClangObject):
                                     len(unsaved_files), options)
 
         if not ptr:
+            conf.unload_lib()
             raise TranslationUnitLoadError("Error parsing translation unit.")
 
         return cls(ptr, index=index)
@@ -3680,6 +3692,7 @@ class Config:
     library_file = None
     compatibility_check = True
     loaded = False
+    _lib=None
 
     @staticmethod
     def set_library_path(path):
@@ -3723,12 +3736,18 @@ class Config:
 
         Config.compatibility_check = check_status
 
-    @CachedProperty
+    def unload_lib(self):
+        _lib=None
+
+    # was @CachedProperty but we need to reload in case of a crash.
+    @property
     def lib(self):
-        lib = self.get_cindex_library()
-        register_functions(lib, not Config.compatibility_check)
+        if self._lib:
+            return self._lib
+        self._lib = self.get_cindex_library()
+        register_functions(self._lib, not Config.compatibility_check)
         Config.loaded = True
-        return lib
+        return self._lib
 
     def get_filename(self):
         if Config.library_file:

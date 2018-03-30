@@ -51,7 +51,7 @@ if platform.system() == 'Darwin':
             cindex.Config.set_library_file(lname)
 else:
     libclangs = [
-        'C:/Program Files (x86)/LLVM/bin'
+        'C:/Program Files/LLVM/bin'
     ]
 
     found = False
@@ -182,8 +182,10 @@ class Tree(documentmerger.DocumentMerger):
                 continue
 
             #print('Processing {0}'.format(os.path.basename(f)))
-
-            tu = self.index.parse(f, self.flags)
+            try:
+                tu = self.index.parse(f, self.flags)
+            except:
+                continue
 
             if len(tu.diagnostics) != 0:
                 fatal = False
@@ -414,10 +416,11 @@ class Tree(documentmerger.DocumentMerger):
         cursor = node.cursor
 
         # If node is a C function, then see if we should group it to a struct
-        parent = self.node_on_c_struct(node)
+        # RVK: Wait, what?
+        #parent = self.node_on_c_struct(node)
 
-        if parent:
-            return parent
+        #if parent:
+        #    return parent
 
         while cursor:
             cursor = cursor.semantic_parent

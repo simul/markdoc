@@ -11,14 +11,14 @@
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
+    <InterpreterId>{b8d00d34-b396-4360-907e-34b71f9b7c8d}</InterpreterId>
     <InterpreterVersion>2.7</InterpreterVersion>
-    <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"$(VCINSTALLDIR)\\atlmfc\\include" -I"$(VCINSTALLDIR)\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --strip "$(SIMUL)/" --md_output ref $(SIMUL)/Sky/*.h $(SIMUL)/Clouds/*.h --merge C:/Simul/4.2/Simul/Help --clean C:/Simul/docs/ref --post "$(SIMUL)/Help/build.bat"</CommandLineArguments>
+    <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"$(VCINSTALLDIR)\\atlmfc\\include" -I"$(VCINSTALLDIR)\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --strip "$(SIMUL)/" --md_output ref $(SIMUL)/Base/*.h $(SIMUL)/Math/*.h $(SIMUL)/Geometry/*.h $(SIMUL)/Sky/*.h $(SIMUL)/Clouds/*.h $(SIMUL)/Platform/CrossPlatform/*.h $(SIMUL)/Plugins/TrueSkyPluginRender/*.h --merge C:/Simul/4.2/Simul/Help --clean C:/Simul/docs/ref --post "$(SIMUL)/Help/build.bat"</CommandLineArguments>
     <InterpreterPath>
     </InterpreterPath>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>Path=C:\Program Files\LLVM\bin;$(Path)
-also=
+also=	
 test= 
 
 </Environment>
@@ -125,7 +125,7 @@ test=
     <Folder Include="tests" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
+    <InterpreterReference Include="{b8d00d34-b396-4360-907e-34b71f9b7c8d}\2.7" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

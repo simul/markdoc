@@ -16,10 +16,18 @@ from .category import Category
 class Root(Node):
     def __init__(self):
         Node.__init__(self, None, None)
+        self._title='Root'
 
     @property
     def is_anonymous(self):
         return True
+
+    def set_title(self,t):
+        self._title=t
+
+    @property
+    def title(self):
+        return self._title
 
     def sorted_children(self):
         schildren = list(Node.sorted_children(self))
