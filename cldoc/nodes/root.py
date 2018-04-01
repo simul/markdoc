@@ -14,35 +14,35 @@ from .node import Node
 from .category import Category
 
 class Root(Node):
-    def __init__(self):
-        Node.__init__(self, None, None)
-        self._title='Root'
+	def __init__(self):
+		Node.__init__(self, None, None)
+		self._title='Root'
 
-    @property
-    def is_anonymous(self):
-        return True
+	@property
+	def is_anonymous(self):
+		return True
 
-    def set_title(self,t):
-        self._title=t
+	def set_title(self,t):
+		self._title=t
 
-    @property
-    def title(self):
-        return self._title
+	@property
+	def title(self):
+		return self._title
 
-    def sorted_children(self):
-        schildren = list(Node.sorted_children(self))
+	def sorted_children(self):
+		schildren = list(Node.sorted_children(self))
 
-        # Keep categories in order though
-        c = [x for x in self.children if isinstance(x, Category)]
-        c.reverse()
+		# Keep categories in order though
+		c = [x for x in self.children if isinstance(x, Category)]
+		c.reverse()
 
-        if len(c) == 0:
-            return schildren
+		if len(c) == 0:
+			return schildren
 
-        for i in range(0, len(schildren)):
-            if isinstance(schildren[i], Category):
-                schildren[i] = c.pop()
+		for i in range(0, len(schildren)):
+			if isinstance(schildren[i], Category):
+				schildren[i] = c.pop()
 
-        return schildren
+		return schildren
 
 # vi:ts=4:et

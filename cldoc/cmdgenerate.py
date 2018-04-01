@@ -19,150 +19,150 @@ from . import log
 import glob
 
 def run_generate(t, opts):
-    if opts.type != 'html' and opts.type != 'xml' and opts.type != 'md':
-        return
+	if opts.type != 'html' and opts.type != 'xml' and opts.type != 'md':
+		return
 
-    from . import generators
+	from . import generators
 
-    if opts.type == 'html' and opts.static:
-        baseout = fs.fs.mkdtemp()
-    else:
-        baseout = opts.output
+	if opts.type == 'html' and opts.static:
+		baseout = fs.fs.mkdtemp()
+	else:
+		baseout = opts.output
 
-    xmlout = os.path.join(baseout, 'xml')
-    if opts.type == 'xml':
-        generator = generators.Xml(t, opts)
-        generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
-    if opts.type == 'md':
-        generator_md = generators.Md(t, opts)
-        generator_md.generate(baseout)
+	xmlout = os.path.join(baseout, 'xml')
+	if opts.type == 'xml':
+		generator = generators.Xml(t, opts)
+		generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
+	if opts.type == 'md':
+		generator_md = generators.Md(t, opts)
+		generator_md.generate(baseout)
 
-    if opts.type == 'html':
-        generators.Html(t).generate(baseout, opts.static, opts.custom_js, opts.custom_css)
+	if opts.type == 'html':
+		generators.Html(t).generate(baseout, opts.static, opts.custom_js, opts.custom_css)
 
-        if opts.static:
-            staticsite.generate(baseout, opts)
-    if opts.post != '':
-        args=opts.post.split(' ')
-        subprocess.call(args,shell=True)
+		if opts.static:
+			staticsite.generate(baseout, opts)
+	if opts.post != '':
+		args=opts.post.split(' ')
+		subprocess.call(args,shell=True)
 
 def run(args):
-    try:
-        sep = args.index('--')
-    except ValueError:
-        if not '--help' in args:
-            sys.stderr.write('Please use: cldoc generate [CXXFLAGS] -- [OPTIONS] [FILES]\n')
-            sys.exit(1)
-        else:
-            sep = -1
+	try:
+		sep = args.index('--')
+	except ValueError:
+		if not '--help' in args:
+			sys.stderr.write('Please use: cldoc generate [CXXFLAGS] -- [OPTIONS] [FILES]\n')
+			sys.exit(1)
+		else:
+			sep = -1
 
-    parser = argparse.ArgumentParser(description='clang based documentation generator.',
-                                     usage='%(prog)s generate [CXXFLAGS] -- [OPTIONS] [FILES]')
+	parser = argparse.ArgumentParser(description='clang based documentation generator.',
+									 usage='%(prog)s generate [CXXFLAGS] -- [OPTIONS] [FILES]')
 
-    parser.add_argument('--quiet', default=False, action='store_const', const=True,
-                        help='be quiet about it')
+	parser.add_argument('--quiet', default=False, action='store_const', const=True,
+						help='be quiet about it')
 
-    parser.add_argument('--loglevel', default='error', metavar='LEVEL',
-                        help='specify the logevel (error, warning, info)')
+	parser.add_argument('--loglevel', default='error', metavar='LEVEL',
+						help='specify the logevel (error, warning, info)')
 
-    parser.add_argument('--report', default=False,
-                          action='store_const', const=True, help='report documentation coverage and errors')
+	parser.add_argument('--report', default=False,
+						  action='store_const', const=True, help='report documentation coverage and errors')
 
-    parser.add_argument('--output', default=None, metavar='DIR',
-                          help='specify the output directory')
+	parser.add_argument('--output', default=None, metavar='DIR',
+						  help='specify the output directory')
 
-    parser.add_argument('--md_output', default='', metavar='DIR',
-                          help='specify the relative markdown generated files output directory')
-     
-    parser.add_argument('--language', default='c++', metavar='LANGUAGE',
-                          help='specify the default parse language (c++, c or objc)')
+	parser.add_argument('--md_output', default='', metavar='DIR',
+						  help='specify the relative markdown generated files output directory')
+	 
+	parser.add_argument('--language', default='c++', metavar='LANGUAGE',
+						  help='specify the default parse language (c++, c or objc)')
 
-    parser.add_argument('--type', default='html', metavar='TYPE',
-                          help='specify the type of output (html or xml, default html)')
+	parser.add_argument('--type', default='html', metavar='TYPE',
+						  help='specify the type of output (html or xml, default html)')
 
-    parser.add_argument('--merge', default=[], metavar='FILES', action='append',
-                          help='specify additional description files to merge into the documentation')
+	parser.add_argument('--merge', default=[], metavar='FILES', action='append',
+						  help='specify additional description files to merge into the documentation')
 
-    parser.add_argument('--merge-filter', default=None, metavar='FILTER',
-                          help='specify program to pass merged description files through')
+	parser.add_argument('--merge-filter', default=None, metavar='FILTER',
+						  help='specify program to pass merged description files through')
 
-    parser.add_argument('--basedir', default=None, metavar='DIR',
-                          help='the project base directory')
+	parser.add_argument('--basedir', default=None, metavar='DIR',
+						  help='the project base directory')
 
-    parser.add_argument('--static', default=False, action='store_const', const=True,
-                          help='generate a static website (only for when --output is html, requires globally installed cldoc-static via npm)')
+	parser.add_argument('--static', default=False, action='store_const', const=True,
+						  help='generate a static website (only for when --output is html, requires globally installed cldoc-static via npm)')
 
-    parser.add_argument('--custom-js', default=[], metavar='FILES', action='append',
-                          help='specify additional javascript files to be merged into the html (only for when --output is html)')
+	parser.add_argument('--custom-js', default=[], metavar='FILES', action='append',
+						  help='specify additional javascript files to be merged into the html (only for when --output is html)')
 
-    parser.add_argument('--custom-css', default=[], metavar='FILES', action='append',
-                          help='specify additional css files to be merged into the html (only for when --output is html)')
-    
-    parser.add_argument('--clean', default=None, metavar='CLEAN',
-                          help='directory to clean before running')
+	parser.add_argument('--custom-css', default=[], metavar='FILES', action='append',
+						  help='specify additional css files to be merged into the html (only for when --output is html)')
+	
+	parser.add_argument('--clean', default=None, metavar='CLEAN',
+						  help='directory to clean before running')
 
-    parser.add_argument('--strip', default=None, metavar='STRIP',
-                          help='path to remove from filenames')
+	parser.add_argument('--strip', default=None, metavar='STRIP',
+						  help='path to remove from filenames')
 
-    parser.add_argument('--post', default=None, metavar='POST',
-                          help='command to execute after completion')
+	parser.add_argument('--post', default=None, metavar='POST',
+						  help='command to execute after completion')
 
-    parser.add_argument('files', nargs='+', help='files to parse')
+	parser.add_argument('files', nargs='+', help='files to parse')
 
-    restargs = args[sep + 1:]
-    cxxflags = args[:sep]
+	restargs = args[sep + 1:]
+	cxxflags = args[:sep]
 
-    opts = parser.parse_args(restargs)
-    newfiles=[]
-    for filepath in opts.files:
-        gfiles=glob.glob(filepath)
-        newfiles=newfiles+gfiles
-    opts.files=newfiles
-    if opts.quiet:
-        sys.stdout = open(os.devnull, 'w')
-    if opts.clean:
-        r = glob.glob(opts.clean+'/*')
-        for i in r:
-            if os.path.isdir(i):
-                shutil.rmtree(i)
-            else:
-                os.remove(i)
+	opts = parser.parse_args(restargs)
+	newfiles=[]
+	for filepath in opts.files:
+		gfiles=glob.glob(filepath)
+		newfiles=newfiles+gfiles
+	opts.files=newfiles
+	if opts.quiet:
+		sys.stdout = open(os.devnull, 'w')
+	if opts.clean:
+		r = glob.glob(opts.clean+'/*')
+		for i in r:
+			if os.path.isdir(i):
+				shutil.rmtree(i)
+			else:
+				os.remove(i)
 
-    log.setLevel(opts.loglevel)
+	log.setLevel(opts.loglevel)
 
-    from . import tree
-    
-    if opts.strip:
-        opts.strip=opts.strip.replace('\\','/')
-        opts.strip=opts.strip.replace('//','/')
-    
-    if not opts.output:
-        sys.stderr.write("Please specify the output directory\n")
-        sys.exit(1)
+	from . import tree
+	
+	if opts.strip:
+		opts.strip=opts.strip.replace('\\','/')
+		opts.strip=opts.strip.replace('//','/')
+	
+	if not opts.output:
+		sys.stderr.write("Please specify the output directory\n")
+		sys.exit(1)
 
-    if opts.static and opts.type != 'html':
-        sys.stderr.write("The --static option can only be used with the html output format\n")
-        sys.exit(1)
+	if opts.static and opts.type != 'html':
+		sys.stderr.write("The --static option can only be used with the html output format\n")
+		sys.exit(1)
 
-    haslang = False
+	haslang = False
 
-    for x in cxxflags:
-        if x.startswith('-x'):
-            haslang = True
+	for x in cxxflags:
+		if x.startswith('-x'):
+			haslang = True
 
-    if not haslang:
-        cxxflags.append('-x')
-        cxxflags.append(opts.language)
+	if not haslang:
+		cxxflags.append('-x')
+		cxxflags.append(opts.language)
 
-    t = tree.Tree(opts.files, cxxflags, opts)
+	t = tree.Tree(opts.files, cxxflags, opts)
 
-    t.process()
+	t.process()
 
-    if opts.merge:
-        t.merge(opts.merge_filter, opts.merge)
+	if opts.merge:
+		t.merge(opts.merge_filter, opts.merge)
 
-    t.cross_ref()
+	t.cross_ref()
 
-    run_generate(t, opts)
+	run_generate(t, opts)
 
 # vi:ts=4:et

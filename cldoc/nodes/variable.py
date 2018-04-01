@@ -16,11 +16,11 @@ from .ctype import Type
 from cldoc.clang import cindex
 
 class Variable(Node):
-    kind = cindex.CursorKind.VAR_DECL
+	kind = cindex.CursorKind.VAR_DECL
 
-    def __init__(self, cursor, comment):
-        Node.__init__(self, cursor, comment)
+	def __init__(self, cursor, comment):
+		Node.__init__(self, cursor, comment)
 
-        self.type = Type(cursor.type, cursor=cursor)
+		self.type = Type(cursor.type, cursor=cursor)
 
 # vi:ts=4:et

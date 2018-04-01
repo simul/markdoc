@@ -19,46 +19,46 @@ from cldoc.comment import Parser
 import re
 
 class Templated(Node):
-    def __init__(self, cursor, comment):
-        super(Templated, self).__init__(cursor, comment)
+	def __init__(self, cursor, comment):
+		super(Templated, self).__init__(cursor, comment)
 
-        self._template_types = {}
-        self._template_type_comments = {}
+		self._template_types = {}
+		self._template_type_comments = {}
 
-        self.process_children = True
+		self.process_children = True
 
-    @property
-    def template_type_names(self):
-        for t in self._template_types:
-            yield t
+	@property
+	def template_type_names(self):
+		for t in self._template_types:
+			yield t
 
-    def sorted_children(self):
-        return list(self.children)
+	def sorted_children(self):
+		return list(self.children)
 
-    def append(self, child):
-        if isinstance(child, TemplateTypeParameter) or \
-           isinstance(child, TemplateNonTypeParameter):
-            self._template_types[child.name] = child
+	def append(self, child):
+		if isinstance(child, TemplateTypeParameter) or \
+		   isinstance(child, TemplateNonTypeParameter):
+			self._template_types[child.name] = child
 
-            if child.name in self._template_type_comments:
-                if hasattr(self._comment, 'params') and (child.name in self._comment.params):
-                    del self._comment.params[child.name]
+			if child.name in self._template_type_comments:
+				if hasattr(self._comment, 'params') and (child.name in self._comment.params):
+					del self._comment.params[child.name]
 
-                child.merge_comment(self._template_type_comments[child.name])
+				child.merge_comment(self._template_type_comments[child.name])
 
-        super(Templated, self).append(child)
+		super(Templated, self).append(child)
 
-    def parse_comment(self):
-        super(Templated, self).parse_comment()
+	def parse_comment(self):
+		super(Templated, self).parse_comment()
 
-        for p in self._parsed_comment.preparam:
-            cm = Comment(p.description, self._comment.location)
-            self._template_type_comments[p.name] = cm
+		for p in self._parsed_comment.preparam:
+			cm = Comment(p.description, self._comment.location)
+			self._template_type_comments[p.name] = cm
 
-            if p.name in self._template_types:
-                if hasattr(self._comment, 'params') and (p.name in self._comment.params):
-                    del self._comment.params[p.name]
+			if p.name in self._template_types:
+				if hasattr(self._comment, 'params') and (p.name in self._comment.params):
+					del self._comment.params[p.name]
 
-                self._template_types[p.name].merge_comment(cm)
+				self._template_types[p.name].merge_comment(cm)
 
 # vi:ts=4:et

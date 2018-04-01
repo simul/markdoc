@@ -20,63 +20,63 @@ from .search import Search
 from cldoc import fs
 
 class Html(Generator):
-    def generate(self, output, isstatic, customjs=[], customcss=[]):
-        # Write out json document for search
-        self.write_search(output)
+	def generate(self, output, isstatic, customjs=[], customcss=[]):
+		# Write out json document for search
+		self.write_search(output)
 
-        d = os.path.dirname(__file__)
+		d = os.path.dirname(__file__)
 
-        datadir = os.path.abspath(os.path.join(d, '..', 'data'))
-        index = os.path.join(datadir, 'index.html')
+		datadir = os.path.abspath(os.path.join(d, '..', 'data'))
+		index = os.path.join(datadir, 'index.html')
 
-        try:
-            fs.fs.makedirs(datadir)
-        except:
-            pass
+		try:
+			fs.fs.makedirs(datadir)
+		except:
+			pass
 
-        outfile = os.path.join(output, 'index.html')
+		outfile = os.path.join(output, 'index.html')
 
-        jstags = ['<script type="text/javascript" src="{0}"></script>'.format(x) for x in customjs]
-        csstags = ['<link rel="stylesheet" href="{0}" type="text/css" charset="utf-8"/>'.format(x) for x in customcss]
+		jstags = ['<script type="text/javascript" src="{0}"></script>'.format(x) for x in customjs]
+		csstags = ['<link rel="stylesheet" href="{0}" type="text/css" charset="utf-8"/>'.format(x) for x in customcss]
 
-        with fs.fs.open(index) as f:
-            content = f.read()
+		with fs.fs.open(index) as f:
+			content = f.read()
 
-            templ = '<meta type="custom-js" />'
-            content = content.replace(templ, " ".join(jstags))
+			templ = '<meta type="custom-js" />'
+			content = content.replace(templ, " ".join(jstags))
 
-            templ = '<meta type="custom-css" />'
-            content = content.replace(templ, " ".join(csstags))
+			templ = '<meta type="custom-css" />'
+			content = content.replace(templ, " ".join(csstags))
 
-            with fs.fs.open(outfile, 'w') as o:
-                o.write(content)
-                
-        Generator.generate(self, outdir)
-        if "CLDOC_DEV" in os.environ:
-            fs.fs.rmtree(os.path.join(output, "javascript"), True)
-            fs.fs.copytree(os.path.join(datadir, "javascript"), os.path.join(output, "javascript"))
+			with fs.fs.open(outfile, 'w') as o:
+				o.write(content)
+				
+		Generator.generate(self, outdir)
+		if "CLDOC_DEV" in os.environ:
+			fs.fs.rmtree(os.path.join(output, "javascript"), True)
+			fs.fs.copytree(os.path.join(datadir, "javascript"), os.path.join(output, "javascript"))
 
-            fs.fs.rmtree(os.path.join(output, "styles"), True)
-            fs.fs.copytree(os.path.join(datadir, "styles"), os.path.join(output, "styles"))
+			fs.fs.rmtree(os.path.join(output, "styles"), True)
+			fs.fs.copytree(os.path.join(datadir, "styles"), os.path.join(output, "styles"))
 
-        print('Generated `{0}\''.format(outfile))
+		print('Generated `{0}\''.format(outfile))
 
-    def write_search(self, output):
-        search = Search(self.tree)
+	def write_search(self, output):
+		search = Search(self.tree)
 
-        records = [None] * len(search.records)
+		records = [None] * len(search.records)
 
-        for r in range(len(search.records)):
-            rec = search.records[r]
+		for r in range(len(search.records)):
+			rec = search.records[r]
 
-            records[r] = (
-                rec.s,
-                rec.node.refid,
-            )
+			records[r] = (
+				rec.s,
+				rec.node.refid,
+			)
 
-        outfile = os.path.join(output, 'search.json')
+		outfile = os.path.join(output, 'search.json')
 
-        with fs.fs.open(outfile, 'w') as f:
-            f.write(json.dumps({'records': records, 'suffixes': search.db}))
+		with fs.fs.open(outfile, 'w') as f:
+			f.write(json.dumps({'records': records, 'suffixes': search.db}))
 
 # vi:ts=4:et

@@ -11,7 +11,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 class Defdict(dict):
-    def __missing__(self, key):
-        return None
+	def __missing__(self, key):
+		return None
 
 # vi:ts=4:et

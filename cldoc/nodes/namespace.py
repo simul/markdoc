@@ -16,11 +16,11 @@ from .root import Root
 from cldoc.clang import cindex
 
 class Namespace(Node):
-    kind = cindex.CursorKind.NAMESPACE
+	kind = cindex.CursorKind.NAMESPACE
 
-    def __init__(self, cursor, comment):
-        Node.__init__(self, cursor, comment)
+	def __init__(self, cursor, comment):
+		Node.__init__(self, cursor, comment)
 
-        self.process_children = True
+		self.process_children = True
 
 # vi:ts=4:et

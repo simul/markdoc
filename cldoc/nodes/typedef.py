@@ -16,18 +16,18 @@ from .ctype import Type
 from cldoc.clang import cindex
 
 class Typedef(Node):
-    kind = cindex.CursorKind.TYPEDEF_DECL
+	kind = cindex.CursorKind.TYPEDEF_DECL
 
-    def __init__(self, cursor, comment):
-        Node.__init__(self, cursor, comment)
+	def __init__(self, cursor, comment):
+		Node.__init__(self, cursor, comment)
 
-        children = [child for child in cursor.get_children()]
+		children = [child for child in cursor.get_children()]
 
-        if len(children) == 1 and children[0].kind == cindex.CursorKind.TYPE_REF:
-            tcursor = children[0]
-            self.type = Type(tcursor.type, tcursor)
-        else:
-            self.process_children = True
-            self.type = Type(self.cursor.type.get_canonical(), cursor=self.cursor)
+		if len(children) == 1 and children[0].kind == cindex.CursorKind.TYPE_REF:
+			tcursor = children[0]
+			self.type = Type(tcursor.type, tcursor)
+		else:
+			self.process_children = True
+			self.type = Type(self.cursor.type.get_canonical(), cursor=self.cursor)
 
 # vi:ts=4:et
