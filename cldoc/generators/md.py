@@ -130,11 +130,11 @@ class Md(Generator):
 			if child.tag=='type':
 				title=child.attrib['name']
 				ref=''
-				if child.attrib.has_key('ref'):
+				if 'ref' in child.attrib:
 					ref=child.attrib['ref']
 				f.write(self.link_md(title,ref))
 		f.write('\n')
-	  
+
 	def get_return_type(self,elem):
 		ret_parts=[]
 		for child in elem.getchildren():
@@ -142,7 +142,7 @@ class Md(Generator):
 				for c in child.getchildren():
 					if c.tag=='type':
 						ret_parts.append(c.attrib['name'])
-						if c.attrib.has_key('qualifier'):
+						if 'qualifier' in c.attrib:
 							ret_parts.append(c.attrib['qualifier']);
 		ret_type=' '.join(ret_parts);
 		return ret_type
@@ -158,12 +158,12 @@ class Md(Generator):
 	
 	def get_location(self,elem):
 		location=''
-		if elem.attrib.has_key('location'):
+		if 'location' in elem.attrib:
 			return elem.attrib['location']
 		return location
 	def get_lib(self,elem):
 		lib=''
-		if elem.attrib.has_key('lib'):
+		if 'lib' in elem.attrib:
 			return elem.attrib['lib']
 		return lib
 
@@ -186,7 +186,7 @@ class Md(Generator):
 		ret_arg['name']=elem.attrib['name']
 		for child in elem.getchildren():
 			if child.tag=='type':
-				if child.attrib.has_key('name'):
+				if 'name' in child.attrib:
 					ret_arg['type']=child.attrib['name']
 				else:
 					ret_arg['type']=''
@@ -243,7 +243,7 @@ class Md(Generator):
 				doc=child.text
 		#blank line before a heading h4:
 		f.write('\n### <a name="'+elem.attrib['name']+'"/>'+ret_type+' '+elem.attrib['name'])
-	   
+
 		arglist=self.get_typed_arguments_text(elem)
 		f.write('('+arglist+')')
 		f.write('\n')
@@ -284,7 +284,7 @@ class Md(Generator):
 		for child in elem.getchildren():
 			if child.tag=="ref":
 				title=child.text
-				if child.attrib.has_key('ref'):
+				if 'ref' in child.attrib:
 					link=self.ref_to_link(child.attrib['ref'])
 					#res+='[{0}]({1})'.format(title,link)
 					res+='<a href="{1}">{0}</a>'.format(title,link)
@@ -302,9 +302,9 @@ class Md(Generator):
 		tree = ElementTree.ElementTree(elem)
 
 		self.indent(tree.getroot())
-		if elem.attrib.has_key('title'):
+		if 'title' in elem.attrib:
 			title=elem.attrib['title']
-		elif elem.attrib.has_key('name'):
+		elif 'name' in elem.attrib:
 			title=elem.attrib['name']
 		elif elem.tag=='index':
 			title='Index'
@@ -312,7 +312,7 @@ class Md(Generator):
 			title='Untitled'
 
 		weight=0
-		if elem.attrib.has_key('weight'):
+		if 'weight' in elem.attrib:
 			weight=elem.attrib['weight']
 		layout_name='reference'
 
@@ -430,7 +430,7 @@ class Md(Generator):
 				for child in methods:
 					f.write('\n| '+self.get_return_type(child)+' | ['+child.attrib['name']+'](#'+child.attrib['name']+')('+self.get_typed_arguments_text(child)+') |')
 					any_methods=True
-				  
+
 			f.write('\n')
 			# main text
 			if doc:
@@ -464,7 +464,7 @@ class Md(Generator):
 				for child in enums:
 					self.indent(child)
 					self.doc_enum(f,child)	
-		   
+
 			for child in fields:
 				self.indent(child)
 				self.doc_field(f,child)

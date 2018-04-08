@@ -10,13 +10,14 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-from clang import cindex
-from defdict import Defdict
+from .clang import cindex
+from .defdict import Defdict
 
-from cldoc.struct import Struct
-from cldoc import utf8
+from .struct import Struct
+from . import utf8
 
 import os, re, sys, bisect
+from functools import *
 
 class Sorted(list):
 	def __init__(self, key=None):
@@ -474,11 +475,11 @@ class CommentsDatabase(object):
 		self.comments.insert(comment)
 
 	def extract_loop(self, iter):
-		token = iter.next()
+		token = next(iter)
 
 		# Skip until comment found
 		while token.kind != cindex.TokenKind.COMMENT:
-			token = iter.next()
+			token = next(iter)
 
 		comments = []
 		prev = None
@@ -502,7 +503,7 @@ class CommentsDatabase(object):
 				comments.append(cleaned)
 
 			prev = token
-			token = iter.next()
+			token = next(iter)
 
 		if len(comments) > 0:
 			self.extract_one(token, "\n".join(comments))
@@ -550,13 +551,42 @@ class CommentsDatabase(object):
 
 from pyparsing import *
 
+class ParsedElement:
+	keyword=''
+	parameters=[]
+
+class ParsedComment:
+	properties={}
+
 class Parser:
+	parsedElements=[]
+	def parseDocumentProperty( cmt, cnt, strg, loc, toks ):
+		el = ParsedElement()
+		el.keyword=toks[1]
+		cmt.properties[toks[1]]=toks[2:]
+
+	def parsePlainText( cmt, cnt, strg, loc, toks ):
+		el = ParsedElement()
+		el.keyword=toks[0]
+
+	def parseTest( cmt, cnt, strg, loc, toks ):
+		el = ParsedElement()
+		el.keyword=toks[0]
+
+	def parsePre( cmt, cnt, strg, loc, toks ):
+		pass
+
+	def parsePost( cmt, cnt, strg, loc, toks ):
+		pass
+		
+	cmt=ParsedComment()
 	ParserElement.setDefaultWhitespaceChars(' \t\r')
 	
 	#All variables defined on the class level in Python are considered static.
 	# Here, we define static members of the class Parser, from pyparsing:
 	identifier = Word(alphas + '_', alphanums + '_')
-	
+	#quoted_identifier=QuotedString('"', escChar='\\')
+
 	# I have modified the parser to make brief the default return, and body is optional. Only if there is a double lineEnd will there be a body,
 	# and it is everything from the first such double lineEnd to the end of the text.
 	briefline = NotAny('@') + ((Regex('[^\n]+') + lineEnd))
@@ -565,9 +595,29 @@ class Parser:
 	paramdesc = restOfLine + ZeroOrMore(lineEnd + ~('@' | lineEnd) + Regex('[^\n]+')) + lineEnd.suppress()
 	param = '@' + identifier.setResultsName('name') + White() + Combine(paramdesc).setResultsName('description')
 
-	preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True))
+	#preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True)).setParseAction(partial(parsePost,cmt,1))
 	postparams = ZeroOrMore(param.setResultsName('postparam', listAllMatches=True))
+	preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True)).setParseAction(partial(parsePre,cmt,1))
 	
+	
+	space=White()
+
+	backslash=oneOf('\\')
+	title_k=backslash+Keyword('title')
+	title=(title_k+space+Or([identifier,quoted_identifier])).setParseAction(partial(parseDocumentProperty,cmt,1))
+	command=title
+	plainText=Regex('[^\n\\\\]+').setParseAction(partial(parsePlainText,cmt,1))
+	bodyElement=Or(command ,plainText).setParseAction(partial(parseTest,cmt,1))
+
+	bodyLine = ( NotAny('@') +ZeroOrMore(bodyElement) + lineEnd).setParseAction(partial(parseTest,cmt,1))
+	'''
+	#bodyline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
+	parsedBody = ZeroOrMore(bodyLine)
+	
+	#body = Combine(parsedBody).setResultsName('body')
+	
+	doc = (Optional(brief) + preparams + parsedBody + postparams)
+	'''
 	bodyline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
 	body = OneOrMore(lineEnd) + Combine(ZeroOrMore(bodyline)).setResultsName('body')
 
@@ -575,6 +625,9 @@ class Parser:
 
 	@staticmethod
 	def parse(s):
-		return Parser.doc.parseString(s)
+		p=Parser()
+		ret=p.doc.parseString(s)
+		ret.cmt=p.cmt
+		return ret;
 
 # vi:ts=4:et

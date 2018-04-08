@@ -6,14 +6,14 @@
     <ProjectGuid>{91ab4796-69d9-421c-b7a7-544a473f214b}</ProjectGuid>
     <ProjectHome />
     <StartupFile>scripts\cldoc-dev.py</StartupFile>
-    <SearchPath>C:\Python27;C:\Python27\Scripts</SearchPath>
+    <SearchPath>C:\Python36;C:\Python36\Scripts</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>{9a7a9026-48c1-4688-9d5d-e5699d47d074}</InterpreterId>
-    <InterpreterVersion>2.7</InterpreterVersion>
-    <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"$(VCINSTALLDIR)\\atlmfc\\include" -I"$(VCINSTALLDIR)\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --strip "$(SIMUL)/" --md_output ref $(SIMUL)/Base/*.h --merge C:/Simul/4.2/Simul/Help --clean C:/Simul/docs/ref --post "$(SIMUL)/Help/build.bat"</CommandLineArguments>
+    <InterpreterId>{6c0ce15a-d198-45cc-8da8-c03be7f80472}</InterpreterId>
+    <InterpreterVersion>3.5</InterpreterVersion>
+    <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"$(VCINSTALLDIR)\\atlmfc\\include" -I"$(VCINSTALLDIR)\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --strip "$(SIMUL)/" --md_output ref $(SIMUL)/Base/*.gh --merge "C:/Simul/4.2/Simul/Help/C Reference.md" --clean C:/Simul/docs/ref --post "$(SIMUL)/Help/build.bat"</CommandLineArguments>
     <InterpreterPath>
     </InterpreterPath>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
@@ -127,8 +127,7 @@ test=
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
-    <InterpreterReference Include="{9a7a9026-48c1-4688-9d5d-e5699d47d074}\2.7" />
-    <InterpreterReference Include="{b8d00d34-b396-4360-907e-34b71f9b7c8d}\2.7" />
+    <InterpreterReference Include="{6c0ce15a-d198-45cc-8da8-c03be7f80472}\3.5" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

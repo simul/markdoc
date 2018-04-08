@@ -101,7 +101,7 @@ class cldoc_generate(Command):
 			except:
 				pass
 
-		args = [self.sass, '--scss', '--line-numbers', '--no-cache', '--style', 'compressed']
+		args = [self.sass, '--output-style', 'compressed']
 		files = ['html/sass/cldoc.scss', 'html/styles/cldoc.css']
 
 		subprocess.call(args + files)
@@ -144,7 +144,7 @@ for dirpath, dirnames, filenames in os.walk(os.path.join(dataprefix, 'data')):
 	datafiles += [os.path.join(dirpath[len(dataprefix)+1:], f) for f in filenames]
 
 setup(name='cldoc',
-	  version='1.9',
+	  version='1.11',
 	  description='clang based documentation generator for C/C++',
 	  author='Jesse van den Kieboom',
 	  author_email='jessevdk@gmail.com',
@@ -159,6 +159,6 @@ setup(name='cldoc',
 	  },
 	  package_data={'cldoc': datafiles},
 	  cmdclass=cmdclass,
-	  install_requires=['pyparsing ==1.5.7'])
+	  install_requires=['pyparsing == 2.2.0'])
 
 # vi:ts=4:et

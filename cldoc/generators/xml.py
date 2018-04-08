@@ -11,17 +11,17 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 from __future__ import absolute_import
-from cldoc.clang import cindex
+from ..clang import cindex
 
 from .generator import Generator
-from cldoc import nodes
-from cldoc import example
-from cldoc import utf8
+from .. import nodes
+from .. import example
+from .. import utf8
 
 from xml.etree import ElementTree
 import sys, os
 
-from cldoc import fs
+from .. import fs
 
 class Xml(Generator):
 	def generate(self, outdir):
@@ -110,7 +110,12 @@ class Xml(Generator):
 		self.indent(tree.getroot())
 
 		f = fs.fs.open(os.path.join(self.outdir, fname), 'w')
-		tree.write(f, encoding='utf-8', xml_declaration=True)
+
+		if sys.version_info[0] == 3:
+			tree.write(f, encoding='unicode', xml_declaration=True)
+		else:
+			tree.write(f, encoding='utf-8', xml_declaration=True)
+
 		f.write('\n')
 
 		f.close()
@@ -179,17 +184,10 @@ class Xml(Generator):
 			elem.set('ref', r)
 
 	def add_ref_id(self, cursor, elem):
-		if not cursor:
-			return
+		node = self.tree.lookup_node_from_cursor(cursor)
 
-		if cursor in self.tree.cursor_to_node:
-			node = self.tree.cursor_to_node[cursor]
-		elif cursor.get_usr() in self.tree.usr_to_node:
-			node = self.tree.usr_to_node[cursor.get_usr()]
-		else:
-			return
-
-		self.add_ref_node_id(node, elem)
+		if not node is None:
+			self.add_ref_node_id(node, elem)
 
 	def type_to_xml(self, tp, parent=None):
 		elem = ElementTree.Element('type')
@@ -210,6 +208,16 @@ class Xml(Generator):
 
 			for arg in tp.function_arguments:
 				args.append(self.type_to_xml(arg, parent))
+		elif tp.is_template:
+			elem.set('name', tp.typename_for(parent))
+			elem.set('class', 'template')
+
+			args = ElementTree.Element('template-arguments')
+
+			for template_argument in tp.template_arguments:
+				args.append(self.type_to_xml(template_argument, parent))
+
+			elem.append(args)
 		else:
 			elem.set('name', tp.typename_for(parent))
 

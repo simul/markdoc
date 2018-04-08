@@ -12,21 +12,24 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # -*- coding: utf-8 -*-
 
-from clang import cindex
+from .clang import cindex
 import tempfile
+import functools
 
-from defdict import Defdict
+from .defdict import Defdict
 
-import comment
-import nodes
-import includepaths
-import documentmerger
+from . import comment
+from . import nodes
+from . import includepaths
+from . import documentmerger
 
 from . import example
 from . import utf8
 from . import log
 
-import os, sys, sets, re, glob, platform
+from .cmp import cmp
+
+import os, sys, re, glob, platform
 
 from ctypes.util import find_library
 
@@ -63,7 +66,7 @@ else:
 			found = True
 			break
 	if not found:
-		versions = [None, '3.5', '3.4', '3.3', '3.2']
+		versions = [None, '7.0', '6.0', '5.0', '4.0', '3.9', '3.8', '3.7', '3.6', '3.5', '3.4', '3.3', '3.2']
 
 		for v in versions:
 			name = 'clang'
@@ -96,7 +99,7 @@ class Tree(documentmerger.DocumentMerger):
 		self.flags = includepaths.flags(flags)
 
 		# Sort files on sources, then headers
-		self.files.sort(lambda a, b: cmp(self.is_header(a), self.is_header(b)))
+		self.files.sort(key=functools.cmp_to_key(lambda a, b: cmp(self.is_header(a), self.is_header(b))))
 
 		self.processing = {}
 		self.kindmap = {}
@@ -126,6 +129,40 @@ class Tree(documentmerger.DocumentMerger):
 
 		self.qid_to_node[None] = self.root
 		self.usr_to_node[None] = self.root
+
+	def _lookup_node_from_cursor_despecialized(self, cursor):
+		template = cursor.specialized_cursor_template
+
+		if template is None:
+			parent = self.lookup_node_from_cursor(cursor.semantic_parent)
+		else:
+			return self.lookup_node_from_cursor(template)
+
+		if parent is None:
+			return None
+
+		for child in parent.children:
+			if child.name == cursor.spelling:
+				return child
+
+		return None
+
+	def lookup_node_from_cursor(self, cursor):
+		if cursor is None:
+			return None
+
+		# Try lookup by direct cursor reference
+		node = self.cursor_to_node[cursor]
+
+		if not node is None:
+			return node
+
+		node = self.usr_to_node[cursor.get_usr()]
+
+		if not node is None:
+			return node
+
+		return self._lookup_node_from_cursor_despecialized(cursor)
 
 	def filter_source(self, path):
 		return path.endswith('.c') or path.endswith('.cpp') or path.endswith('.h') or path.endswith('.cc') or path.endswith('.hh') or path.endswith('.hpp')
@@ -482,7 +519,7 @@ class Tree(documentmerger.DocumentMerger):
 
 		while True:
 			try:
-				item = citer.next()
+				item = next(citer)
 			except StopIteration:
 				return
 

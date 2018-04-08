@@ -13,7 +13,7 @@
 from .node import Node
 from .ctype import Type
 
-from cldoc.clang import cindex
+from ..clang import cindex
 
 class Typedef(Node):
 	kind = cindex.CursorKind.TYPEDEF_DECL
@@ -24,10 +24,11 @@ class Typedef(Node):
 		children = [child for child in cursor.get_children()]
 
 		if len(children) == 1 and children[0].kind == cindex.CursorKind.TYPE_REF:
-			tcursor = children[0]
-			self.type = Type(tcursor.type, tcursor)
+			typecursor = children[0]
 		else:
 			self.process_children = True
-			self.type = Type(self.cursor.type.get_canonical(), cursor=self.cursor)
+			typecursor = cursor
 
+		self.type = Type(cursor.underlying_typedef_type, typecursor)
+# vi:ts=4:et
 # vi:ts=4:et
