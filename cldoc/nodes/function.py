@@ -16,7 +16,7 @@ from .ctype import Type
 
 from ..clang import cindex
 from ..comment import Comment
-from ..comment import Parser
+from ..parser import Parser
 
 import re
 
@@ -99,7 +99,6 @@ class Function(Node):
 
 	@property
 	def semantic_parent(self):
-		from namespace import Namespace
 
 		parent = self.parent
 

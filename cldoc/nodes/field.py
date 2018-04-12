@@ -14,6 +14,7 @@ from .node import Node
 from .ctype import Type
 
 from ..clang import cindex
+from ..cmp import cmp
 
 class Field(Node):
 	kind = cindex.CursorKind.FIELD_DECL

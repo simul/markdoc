@@ -14,7 +14,7 @@ import functools
 
 from ..clang import cindex
 from ..comment import Comment
-from ..comment import Parser
+from ..parser import Parser
 
 from .. import utf8
 from ..cmp import cmp
@@ -176,6 +176,7 @@ class Node(object):
 			self._comment.brief = self._parsed_comment.brief
 		if len(self._parsed_comment.body) > 0:
 			self._comment.doc = self._parsed_comment.body
+		self._comment.parsedComment=self._parsed_comment.cmt
 
 	@property
 	def natural_sort_name(self):

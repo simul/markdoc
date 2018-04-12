@@ -14,7 +14,7 @@ from .node import Node
 from .templatetypeparameter import TemplateTypeParameter, TemplateNonTypeParameter
 
 from ..comment import Comment
-from ..comment import Parser
+from ..parser import Parser
 
 import re
 

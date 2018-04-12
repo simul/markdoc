@@ -15,9 +15,10 @@ from .defdict import Defdict
 
 from .struct import Struct
 from . import utf8
+from .parser import *
 
 import os, re, sys, bisect
-from functools import *
+
 
 class Sorted(list):
 	def __init__(self, key=None):
@@ -139,17 +140,22 @@ class Comment(object):
 		self.images=[]
 		self.imagepaths=[]
 		self.options=opts
+		self.parsedComment=ParsedComment()
 
 	def __setattr__(self, name, val):
-		if not name in self.docstrings:
-			self.docstrings.append(name)
 
 		if isinstance(val, dict):
 			for key in val:
 				if not isinstance(val[key], Comment.String):
 					val[key] = Comment.String(val[key])
-		elif not isinstance(val, Comment.String):
+		# Let's NOT change the class of members arbitrarily...
+		elif isinstance(val, str):
 			val = Comment.String(val)
+		else:
+			object.__setattr__(self, name, val)
+			return	# ordinary class members
+		if not name in self.docstrings:
+			self.docstrings.append(name)
 
 		self.__dict__[name] = val
 
@@ -187,7 +193,7 @@ class Comment(object):
 				line_offset+=c.count('\n')
 			else:
 				lastpos = 0
-				pos=0
+				pos = 0
 				while pos<len(c):
 					doc_ref= Comment.redocref.search(c, pos)
 					dox_ref= Comment.re_dox_ref.search(c,pos)
@@ -234,7 +240,9 @@ class Comment(object):
 		return ret
 
 	def resolve_refs_for_doc(self, doc, resolver, root):
+		parser=Parser()
 		comps = self.redoc_split(utf8.utf8(doc))
+		comps=parser.parseFull(doc.components[0])
 		components = []
 
 		for pair in comps:
@@ -320,6 +328,7 @@ class Comment(object):
 
 		self.__dict__['_resolved'] = True
 
+		# Each docstring: brief, doc, etc, will become a Comment.String with a list of components, which may be strings or node links.
 		for name in self.docstrings:
 			doc = getattr(self, name)
 
@@ -334,6 +343,8 @@ class Comment(object):
 					self.resolve_refs_for_doc(doc[key], resolver, root)
 			else:
 				self.resolve_refs_for_doc(doc, resolver, root)
+		if self.parsedComment is ParsedComment:
+			self.parsedComment.resolve_cross_refs(resolver,root)
 
 class RangeMap(Sorted):
 	Item = Struct.define('Item', obj=None, start=0, end=0)
@@ -548,86 +559,5 @@ class CommentsDatabase(object):
 			return "\n".join(retl)
 		else:
 			return comment
-
-from pyparsing import *
-
-class ParsedElement:
-	keyword=''
-	parameters=[]
-
-class ParsedComment:
-	properties={}
-
-class Parser:
-	parsedElements=[]
-	def parseDocumentProperty( cmt, cnt, strg, loc, toks ):
-		el = ParsedElement()
-		el.keyword=toks[1]
-		cmt.properties[toks[1]]=toks[2:]
-
-	def parsePlainText( cmt, cnt, strg, loc, toks ):
-		el = ParsedElement()
-		el.keyword=toks[0]
-
-	def parseTest( cmt, cnt, strg, loc, toks ):
-		el = ParsedElement()
-		el.keyword=toks[0]
-
-	def parsePre( cmt, cnt, strg, loc, toks ):
-		pass
-
-	def parsePost( cmt, cnt, strg, loc, toks ):
-		pass
-		
-	cmt=ParsedComment()
-	ParserElement.setDefaultWhitespaceChars(' \t\r')
-	
-	#All variables defined on the class level in Python are considered static.
-	# Here, we define static members of the class Parser, from pyparsing:
-	identifier = Word(alphas + '_', alphanums + '_')
-	#quoted_identifier=QuotedString('"', escChar='\\')
-
-	# I have modified the parser to make brief the default return, and body is optional. Only if there is a double lineEnd will there be a body,
-	# and it is everything from the first such double lineEnd to the end of the text.
-	briefline = NotAny('@') + ((Regex('[^\n]+') + lineEnd))
-	brief = ZeroOrMore(lineEnd) + Combine(Optional(briefline)).setResultsName('brief') 
-
-	paramdesc = restOfLine + ZeroOrMore(lineEnd + ~('@' | lineEnd) + Regex('[^\n]+')) + lineEnd.suppress()
-	param = '@' + identifier.setResultsName('name') + White() + Combine(paramdesc).setResultsName('description')
-
-	#preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True)).setParseAction(partial(parsePost,cmt,1))
-	postparams = ZeroOrMore(param.setResultsName('postparam', listAllMatches=True))
-	preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True)).setParseAction(partial(parsePre,cmt,1))
-	
-	
-	space=White()
-
-	backslash=oneOf('\\')
-	title_k=backslash+Keyword('title')
-	title=(title_k+space+Or([identifier,quoted_identifier])).setParseAction(partial(parseDocumentProperty,cmt,1))
-	command=title
-	plainText=Regex('[^\n\\\\]+').setParseAction(partial(parsePlainText,cmt,1))
-	bodyElement=Or(command ,plainText).setParseAction(partial(parseTest,cmt,1))
-
-	bodyLine = ( NotAny('@') +ZeroOrMore(bodyElement) + lineEnd).setParseAction(partial(parseTest,cmt,1))
-	'''
-	#bodyline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
-	parsedBody = ZeroOrMore(bodyLine)
-	
-	#body = Combine(parsedBody).setResultsName('body')
-	
-	doc = (Optional(brief) + preparams + parsedBody + postparams)
-	'''
-	bodyline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
-	body = OneOrMore(lineEnd) + Combine(ZeroOrMore(bodyline)).setResultsName('body')
-
-	doc = Optional(brief) + preparams + Optional(body) + postparams
-
-	@staticmethod
-	def parse(s):
-		p=Parser()
-		ret=p.doc.parseString(s)
-		ret.cmt=p.cmt
-		return ret;
 
 # vi:ts=4:et

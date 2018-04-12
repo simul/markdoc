@@ -231,7 +231,7 @@ class Tree(documentmerger.DocumentMerger):
 					#rewrite Clang errors in visual studio format.
 					# e.g. C:\\vector.h:249:43: error: function declared 'cdecl' here was previously declared without calling convention
 					# becomes C:\\vector.h(249): error: function declared 'cdecl' here was previously declared without calling convention
-					formatted=re.sub(":(\d+):(?:\d+):", "(\\1):", d.format)
+					formatted=re.sub(":(\d+):(?:\d+):", "(\\1):", d.format())
 					sys.stderr.write(formatted)
 					sys.stderr.write("\n")
 
@@ -331,7 +331,7 @@ class Tree(documentmerger.DocumentMerger):
 
 				text = str(component)
 
-				tmpfile = tempfile.NamedTemporaryFile(delete=False)
+				tmpfile = tempfile.NamedTemporaryFile(mode='w',delete=False)
 				tmpfile.write(text)
 				filename = tmpfile.name
 				tmpfile.close()
@@ -585,7 +585,7 @@ class Tree(documentmerger.DocumentMerger):
 						for node in ret:
 							self.register_node(node, par)
 
-				ignoretop = [cindex.CursorKind.FRIEND, cindex.CursorKind.TYPE_REF, cindex.CursorKind.TEMPLATE_REF, cindex.CursorKind.NAMESPACE_REF,cindex.CursorKind.PARM_DECL]
+				ignoretop = [cindex.CursorKind.FRIEND_DECL, cindex.CursorKind.TYPE_REF, cindex.CursorKind.TEMPLATE_REF, cindex.CursorKind.NAMESPACE_REF,cindex.CursorKind.PARM_DECL]
 
 				if (not par or ret is None) and not item.kind in ignoretop:
 					log.warning("Unhandled cursor: %s", item.kind)
