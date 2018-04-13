@@ -16,6 +16,7 @@ from .defdict import Defdict
 from .struct import Struct
 from . import utf8
 from .parser import *
+from pyparsing import *
 
 import os, re, sys, bisect
 
@@ -149,7 +150,7 @@ class Comment(object):
 				if not isinstance(val[key], Comment.String):
 					val[key] = Comment.String(val[key])
 		# Let's NOT change the class of members arbitrarily...
-		elif isinstance(val, str):
+		elif isinstance(val, str) or isinstance(val, ParseResults):
 			val = Comment.String(val)
 		else:
 			object.__setattr__(self, name, val)
@@ -242,7 +243,8 @@ class Comment(object):
 	def resolve_refs_for_doc(self, doc, resolver, root):
 		parser=Parser()
 		comps = self.redoc_split(utf8.utf8(doc))
-		comps=parser.parseFull(doc.components[0])
+		if len(doc.components)>0:
+			comps=parser.parseFull(doc.components[0])
 		components = []
 
 		for pair in comps:

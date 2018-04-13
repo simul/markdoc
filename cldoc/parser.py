@@ -78,10 +78,9 @@ class Parser:
 	preparams = ZeroOrMore(param.setResultsName('preparam', listAllMatches=True)).setParseAction(partial(parsePre,cmt,1))
 	
 	simpleline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
-	simple = ZeroOrMore(simpleline) #.setParseAction(partial(parseTest,cmt,1)) #.setResultsName('parsedBody')
+	simple = ZeroOrMore(simpleline).setResultsName('body') #.setParseAction(partial(parseTest,cmt,1)) #.setResultsName('parsedBody')
 	#body = Combine(simple).setResultsName('body')
 
-	doc =  preparams + simple + postparams
 
 	space=White()
 	backslash=oneOf('\\')
@@ -90,14 +89,15 @@ class Parser:
 	ref=(backslash+Keyword('ref')+identifier+Optional(identifier|quoted_identifier)).setParseAction(partial(parseRef,cmt))
 	title=(title_k+space+(identifier|quoted_identifier)).setParseAction(partial(parseDocumentProperty,cmt,1))
 	plainText=Regex('[^\n\\\\]+').setParseAction(partial(parsePlainText,cmt))
-	brief=((backslash+Keyword('brief')+(plainText))).setParseAction(partial(parseDocumentProperty,cmt,1))
-	command=(title|namespaces|ref|brief)
+	command=(title|namespaces|ref)
 	bodyElement=(command|plainText).setParseAction(partial(parseBodyElement,cmt,1))
 
 	bodyLine = ( NotAny('@') + Group(ZeroOrMore(bodyElement)) + lineEnd).setParseAction(partial(parseTest,cmt,1))
+	brief=(((backslash+Keyword('brief')).suppress()+simpleline)|(simpleline+lineEnd.suppress())).setResultsName('brief') #setParseAction(partial(parseDocumentProperty,cmt,1))
 	parsedBody=Group(ZeroOrMore(bodyLine))
-
-	part=parsedBody
+	
+	doc = brief + preparams + simple + postparams
+	part= parsedBody
 
 	# Convert the ParseResults object into a components list.
 	def parseResultsToComponents(self,parseResults):
@@ -113,7 +113,12 @@ class Parser:
 				refname=''
 				components.append((line_offset,txt,command,ref, refname))
 			else:
-				pass
+				line_offset=0
+				txt=res
+				command=''
+				ref=''
+				refname=''
+				components.append((line_offset,txt,command,ref, refname))
 		return components
 
 	# This method is intended to do the full parsing and cross-referencing.
@@ -121,9 +126,8 @@ class Parser:
 		Parser.cmt=ParsedComment()
 		u='''\\brief A microsecond timer.
 		 Provides timing to microsecond accuracy; results are reported in milliseconds.'''
-		ret=Parser.part.parseString(u)
+		ret=Parser.part.parseString(s)
 		print(ret.dump())
-		#ret=Parser.part.parseString(s)
 		comp=self.parseResultsToComponents(ret)
 		return comp
 		#return Parser.cmt.components
@@ -133,6 +137,7 @@ class Parser:
 	def parse(s):
 		Parser.cmt=ParsedComment()
 		ret=Parser.doc.parseString(s)
+		print(ret.dump())
 		ret.cmt=Parser.cmt
-		ret.brief=''
+		#ret.brief=''
 		return ret;
