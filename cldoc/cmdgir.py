@@ -636,18 +636,20 @@ class GirTree(documentmerger.DocumentMerger):
 		else:
 			return name.match(child.name)
 
-	def find_ref(self, node, name, goup):
+	def find_ref(self, node, name, goup, kind=None):
 		if node is None:
 			return []
 
 		ret = []
 
 		for child in node.resolve_nodes:
+			if kind!=None and child.tag!=kind:
+				continue
 			if self.match_ref(child, name):
 				ret.append(child)
 
 		if goup and len(ret) == 0:
-			return self.find_ref(node.parent, name, True)
+			return self.find_ref(node.parent, name, True, kind)
 		else:
 			return ret
 

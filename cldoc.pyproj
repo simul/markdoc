@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>{b25184ee-c137-4eca-9581-ac0ed95cb09e}</InterpreterId>
+    <InterpreterId>{6c0ce15a-d198-45cc-8da8-c03be7f80472}</InterpreterId>
     <InterpreterVersion>3.5</InterpreterVersion>
     <CommandLineArguments>generate -IC:\\Simul\\4.2 -I"$(VCINSTALLDIR)\\atlmfc\\include" -I"$(VCINSTALLDIR)\\include" -I"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt" -I"C:\\Program Files\\LLVM\\bin\\..\\lib\\clang\\4.0.0\\include" -std=c++1y -fms-extensions -fms-compatibility -fms-compatibility-version=19 -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-microsoft-template -D_MSC_VER=1900 -DDOXYGEN=1 -- --type=md --loglevel=info --output C:/Simul/docs --strip "$(SIMUL)/" --md_output ref $(SIMUL)/Base/Timer.h --merge "C:/Simul/4.2/Simul/Help/C Reference.md" --clean C:/Simul/docs/ref --post "$(SIMUL)/Help/build.bat"</CommandLineArguments>
     <InterpreterPath>
@@ -129,7 +129,7 @@ test=
     <Folder Include="tests" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="{b25184ee-c137-4eca-9581-ac0ed95cb09e}\3.5" />
+    <InterpreterReference Include="{6c0ce15a-d198-45cc-8da8-c03be7f80472}\3.5" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

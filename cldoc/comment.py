@@ -244,13 +244,14 @@ class Comment(object):
 		parser=Parser()
 		comps = self.redoc_split(utf8.utf8(doc))
 		if len(doc.components)>0:
-			comps=parser.parseFull(doc.components[0])
-		components = []
+			comps=parser.parseFull(doc.components[0],resolver, root)
+			doc.components = comps
+		'''components = []
 
 		for pair in comps:
-			offset, prefix, command, name, refname = pair
-			components.append(prefix)
-			if command==None:
+			offset, fulltext, command, name, refname = pair
+			if command==None or command=='':
+				components.append(fulltext)
 				continue
 			lineno=int(0)
 			filename=''
@@ -322,7 +323,7 @@ class Comment(object):
 					print(': warning: Unknown command \\'+ command)
 				print(filename+' ('+str(lineno)+'): warning: Unknown command \\'+ command)
 
-		doc.components = components
+		doc.components = components'''
 
 	def resolve_refs(self, resolver, root):
 		if self.__dict__['_resolved']:

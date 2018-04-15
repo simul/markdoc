@@ -170,7 +170,8 @@ class Node(object):
 	def parse_comment(self):
 		# Just extract brief and doc
 		# RVK: Here, pyparsing is used. The grammar defined in Parser splits the comment into brief and (optionally) body.
-		self._parsed_comment = Parser.parse(self._comment.text)
+		parser=Parser()
+		self._parsed_comment = parser.parse(self._comment.text)
 
 		if len(self._parsed_comment.brief) > 0:
 			self._comment.brief = self._parsed_comment.brief

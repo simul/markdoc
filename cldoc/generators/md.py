@@ -786,7 +786,7 @@ class Md(Generator):
 
 				s = ''
 				last = code
-			else:
+			elif len(component)==2 and isinstance(component[0][0],nodes.Node):
 				if last is None:
 					doce.text = s
 				else:
@@ -819,6 +819,8 @@ class Md(Generator):
 							last.tail = ', '
 
 					doce.append(last)
+			else:
+				pass
 
 		if last is None:
 			doce.text = s
