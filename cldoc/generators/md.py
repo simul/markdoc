@@ -223,9 +223,8 @@ class Md(Generator):
 	
 	def has_doc(self,elem):
 		for child in elem.getchildren():
-			if child.tag=='brief' or child.tag=='doc':
-				if child.text!='':
-					return True
+			if child.tag=='doc' or child.tag=='brief':
+				return True
 			if self.has_doc(child):
 				return True
 		return False
@@ -294,8 +293,8 @@ class Md(Generator):
 		res+=elem.tail
 		return res
 
-	def write_md(self, elem, fname):
-
+	def write_md(self, node, fname):
+		elem = self.node_to_md(node)
 		self.written[fname] = True
 		fullpath=os.path.join(self.outdir, fname)
 
@@ -897,11 +896,10 @@ class Md(Generator):
 		# ignore nodes containing no documentation
 		if not node.has_any_docs():
 			return
-		elem = self.node_to_md(node)
 		self.namespace_separator='.'
 		if self.namespaces_as_directories==True:
 			self.namespace_separator='/'
-		self.write_md(elem, node.output_filename(self.namespace_separator) + '.md')
+		self.write_md(node, node.output_filename(self.namespace_separator) + '.md')
 
 	def node_to_md_ref(self, node):
 		elem = ElementTree.Element(node.classname)
@@ -918,8 +916,9 @@ class Md(Generator):
 			elem.set('weight', props['weight'])
 
 		# can't put arbitrary text into brief, because markdown is replaced with html.
-		# if not node.comment is None and node.comment.brief:
-		#	elem.append(self.doc_to_md(node, node.comment.brief, 'brief'))
+		# but we must make sure there's something there or it will be skipped
+		if not node.comment is None and node.comment.brief:
+			elem.append(self.doc_to_md(node, node.comment.brief, 'brief'))
 
 		self.call_type_specific(node, elem, 'to_md_ref')
 

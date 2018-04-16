@@ -63,6 +63,9 @@ class Parser:
 	def parseNamespaces(self,toks):
 		if self.resolver==None:
 			return Comment.UnresolvedReference(name)
+		depth=int(1)
+		if len(toks)>1:
+			depth=int(toks[1])
 		nds = []
 		# match any root namespace
 		nds += self.resolver(self.root,re.compile('.*'), False, 'namespace')
@@ -71,8 +74,17 @@ class Parser:
 		ret=ParseResults()
 		for n in nds:
 			refname=n.name
-			ret.append(ParsedElement([n], refname))
+			ret.append('\n- ')
+			ret.append(ParsedElement([n], n.name))
+			# sub-namespaces.
+			child_nodes = []
+			# match any root namespace
+			child_nodes += self.resolver(n,re.compile('.*'), False, 'namespace')
+			for c in child_nodes:
+				ret.append('\n\t- ')
+				ret.append(ParsedElement([c], c.name))
 			#ret.append((nds,'ref'))
+		ret.append('\n')
 
 		return ret
 
@@ -94,7 +106,6 @@ class Parser:
 		return toks
 
 	def reset(self):
-		self.cmt=ParsedComment()
 		self.properties={}
 
 	def __init__(self):
@@ -122,11 +133,11 @@ class Parser:
 		simpleline = NotAny('@') + (lineEnd | (Regex('[^\n]+') + lineEnd))
 		simple = Combine(ZeroOrMore(simpleline)).setResultsName('body')
 
-		
+		integer = Word(nums)
 		space=White()
 		backslash=oneOf('\\').suppress()
 		title_k=backslash+Keyword('title')
-		namespaces=(backslash+Keyword('namespaces')).setParseAction(partial(self.parseNamespaces))
+		namespaces=(backslash+Keyword('namespaces')+Optional(integer)).setParseAction(partial(self.parseNamespaces))
 		ref=(backslash+Keyword('ref')+identifier+Optional(identifier|quoted_identifier)).setParseAction(partial(self.parseRef))
 		title=(title_k+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
 		plainText=Regex('[^\n\\\\]+').setParseAction(partial(self.parsePlainText))
@@ -134,7 +145,7 @@ class Parser:
 		bodyElement=(command|plainText)
 		
 		bodyLine = ( NotAny('@') + Group(ZeroOrMore(bodyElement)) + lineEnd).setParseAction(partial(self.parseTest,1))
-		brief=(Optional(Combine(((backslash+Keyword('brief')).suppress()+simpleline)|(simpleline+lineEnd.suppress()))).setResultsName('brief')) #setParseAction(partial(parseDocumentProperty,cmt,1))
+		brief=(Optional(Combine(((backslash+Keyword('brief')).suppress()+simpleline)|(simpleline+lineEnd.suppress()))).setResultsName('brief'))
 		parsedBody=Group(ZeroOrMore(bodyLine))
 		
 		self.doc = brief + preparams + simple + postparams
@@ -169,6 +180,4 @@ class Parser:
 		self.reset()
 		ret=self.doc.parseString(s)
 		print(ret.dump())
-		ret.cmt=self.cmt
-		#ret.brief=''
 		return ret;
