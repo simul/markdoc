@@ -3,6 +3,7 @@ import os, subprocess
 from . import comment
 from . import nodes
 import sys, re
+import glob
 
 from . import fs
 from . import utf8
@@ -11,10 +12,14 @@ class DocumentMerger:
 	reinclude = re.compile('#<cldoc:include[(]([^)]*)[)]>')
 	reheading = re.compile('(.*)\\s*{#(?:([0-9]*):)?(.*)}')
 	def merge(self, mfilter, files):
-		for f in files:
+		newfiles=[]
+		for filepath in files:
+			gfiles=glob.glob(filepath)
+			newfiles=newfiles+gfiles
+
+		for f in newfiles:
 			if os.path.basename(f).startswith('.'):
 				continue
-
 			if os.path.isdir(f):
 				self.merge(mfilter, [os.path.join(f, x) for x in os.listdir(f)])
 			elif f.endswith('.md'):

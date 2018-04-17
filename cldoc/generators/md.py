@@ -785,7 +785,7 @@ class Md(Generator):
 
 				s = ''
 				last = code
-			elif len(component)==2 and isinstance(component[0][0],nodes.Node):
+			elif hasattr(component,'__iter__') and len(component)==2 and isinstance(component[0][0],nodes.Node):
 				if last is None:
 					doce.text = s
 				else:

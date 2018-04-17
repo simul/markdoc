@@ -32,7 +32,7 @@ class Parser:
 		if len(toks)>2:
 			refname=toks[2]
 		if self.resolver==None:
-			return Comment.UnresolvedReference(name)
+			return 'UnresolvedReference '+ref
 		#el=(lineno(loc, strg),'','ref',ref,refname)
 		
 		if isinstance(ref, utf8.string):
@@ -55,14 +55,14 @@ class Parser:
 
 		if len(newnds) > 0:
 			return (newnds, refname)
-		return Comment.UnresolvedReference(name)
+		return 'Unresolved reference '+ref
 
 	def parseParam(self,toks):
 		return utf8.utf8('\n**'+toks[0]+'**')
 
 	def parseNamespaces(self,toks):
 		if self.resolver==None:
-			return Comment.UnresolvedReference(name)
+			return 'Unresolved reference '
 		depth=int(1)
 		if len(toks)>1:
 			depth=int(toks[1])
@@ -157,7 +157,7 @@ class Parser:
 		components=[]
 		if isinstance(parseResults,ParsedElement):
 			components.append((parseResults.node,parseResults.refname))
-		elif isinstance(parseResults,str):
+		elif isinstance(parseResults,str) or not hasattr(parseResults, '__iter__'):
 			components.append(parseResults)
 		else:
 			for res in parseResults:

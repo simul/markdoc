@@ -392,7 +392,7 @@ class Tree(documentmerger.DocumentMerger):
 		ret = []
 
 		for child in node.resolve_nodes:
-			if kind!=None and child.kind.name.lower()!=kind.lower():
+			if kind!=None and (not hasattr(child, 'kind') or child.kind==None or child.kind.name.lower()!=kind.lower()):
 				continue
 			if self.match_ref(child, name):
 				ret.append(child)
