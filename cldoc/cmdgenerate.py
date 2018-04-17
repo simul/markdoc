@@ -42,7 +42,7 @@ def run_generate(t, opts):
 
 		if opts.static:
 			staticsite.generate(baseout, opts)
-	if opts.post != '':
+	if opts.post!=None and opts.post != '':
 		args=opts.post.split(' ')
 		subprocess.call(args,shell=True)
 

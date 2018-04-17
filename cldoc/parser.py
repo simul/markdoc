@@ -170,7 +170,7 @@ class Parser:
 		self.resolver=resolver
 		self.root=root
 		ret=self.part.parseString(s)
-		print(ret.dump())
+		#print(ret.dump())
 		comp=self.parseResultsToComponents(ret)
 		return comp
 
@@ -179,5 +179,5 @@ class Parser:
 	def parse(self,s):
 		self.reset()
 		ret=self.doc.parseString(s)
-		print(ret.dump())
+		#print(ret.dump())
 		return ret;
