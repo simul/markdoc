@@ -231,6 +231,9 @@ class Tree(documentmerger.DocumentMerger):
 					#rewrite Clang errors in visual studio format.
 					# e.g. C:\\vector.h:249:43: error: function declared 'cdecl' here was previously declared without calling convention
 					# becomes C:\\vector.h(249): error: function declared 'cdecl' here was previously declared without calling convention
+					# bizarrely, the disabling option doesn't work in Clang. So let's apply it here:
+					if d.disable_option in self.flags:
+						continue
 					formatted=re.sub(":(\d+):(?:\d+):", "(\\1):", d.format())
 					sys.stderr.write(formatted)
 					sys.stderr.write("\n")
