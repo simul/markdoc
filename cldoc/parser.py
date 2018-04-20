@@ -60,6 +60,26 @@ class Parser:
 	def parseParam(self,toks):
 		return utf8.utf8('\n**'+toks[0]+'**')
 
+	def recurseNamespaces(self,node,level,limit):
+		ret=[]
+		if not node.has_any_docs():
+			return ret
+		refname=node.name
+		tabs='\t'*level+'- '
+		ret.append(tabs)
+		ret.append(ParsedElement([node], node.name))
+		ret.append('\n')
+		if level+1<limit:
+			# sub-namespaces.
+			child_nodes = []
+			# match any child of this namespace
+			child_nodes += self.resolver(node,re.compile('.*'), False, 'namespace')
+			for child in child_nodes:
+				c=self.recurseNamespaces(child,level+1,limit)
+				if c:
+					ret.extend(c)
+		return ret
+
 	def parseNamespaces(self,toks):
 		if self.resolver==None:
 			return 'Unresolved reference '
@@ -73,18 +93,8 @@ class Parser:
 
 		ret=ParseResults()
 		for n in nds:
-			refname=n.name
-			ret.append('\n- ')
-			ret.append(ParsedElement([n], n.name))
-			# sub-namespaces.
-			child_nodes = []
-			# match any root namespace
-			child_nodes += self.resolver(n,re.compile('.*'), False, 'namespace')
-			for c in child_nodes:
-				ret.append('\n\t- ')
-				ret.append(ParsedElement([c], c.name))
-			#ret.append((nds,'ref'))
-		ret.append('\n')
+			if n.has_any_docs():
+				ret.extend(self.recurseNamespaces(n,0,depth))
 
 		return ret
 

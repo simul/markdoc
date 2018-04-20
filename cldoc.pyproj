@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{91ab4796-69d9-421c-b7a7-544a473f214b}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>scripts\cldoc-dev.py</StartupFile>
+    <StartupFile>scripts\test.py</StartupFile>
     <SearchPath>C:\Python36;C:\Python36\Scripts</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -86,6 +86,9 @@ test=
     <Compile Include="cldoc\tree.py" />
     <Compile Include="cldoc\utf8.py" />
     <Compile Include="cldoc\__init__.py" />
+    <Compile Include="scripts\test.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="setup.py" />
     <Compile Include="tests\regression.py" />
   </ItemGroup>

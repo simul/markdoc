@@ -44,7 +44,10 @@ def run_generate(t, opts):
 			staticsite.generate(baseout, opts)
 	if opts.post!=None and opts.post != '':
 		args=opts.post.split(' ')
-		subprocess.call(args,shell=True)
+		ret=subprocess.call(args,shell=True)
+		if ret!=0:
+			sys.stderr.write('Error: failed to run post process '+opts.post+'\n')
+			sys.exit(1)
 
 def run(args):
 	try:

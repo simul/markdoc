@@ -64,6 +64,7 @@ class Sorted(list):
 			return None
 
 class Comment(object):
+	parser=Parser()
 	class Example(str):
 		def __new__(self, s, strip=True):
 			if strip:
@@ -239,12 +240,12 @@ class Comment(object):
 					pos=lastpos
 					line_offset+=prefix.count('\n')
 		return ret
-
+	
 	def resolve_refs_for_doc(self, doc, resolver, root):
-		parser=Parser()
+		Comment.parser.reset()
 		comps = self.redoc_split(utf8.utf8(doc))
 		if len(doc.components)>0:
-			comps=parser.parseFull(doc.components[0],resolver, root)
+			comps=Comment.parser.parseFull(doc.components[0],resolver, root)
 			doc.components = comps
 		'''components = []
 
