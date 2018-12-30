@@ -16,31 +16,31 @@ window.cldoc = $.extend($.extend({
   host: href.substring(0, href.lastIndexOf('/'))
 }, (ref1 = window.cldoc) != null ? ref1 : {}), {
   tag: function(node) {
-    return $.map(node, function(e) {
-      return e.tagName.toLowerCase();
-    });
+\treturn $.map(node, function(e) {
+\t  return e.tagName.toLowerCase();
+\t});
   },
   startswith: function(s, prefix) {
-    return s.indexOf(prefix) === 0;
+\treturn s.indexOf(prefix) === 0;
   },
   html_escape: function(s) {
-    escapeElement.data = s;
-    return escapeDiv.innerHTML;
+\tescapeElement.data = s;
+\treturn escapeDiv.innerHTML;
   },
   new_timer: function() {
-    var ret;
-    ret = {
-      start: new Date()
-    };
-    ret.tick = function(s) {
-      var end;
-      end = new Date();
-      return ret.start = end;
-    };
-    return ret;
+\tvar ret;
+\tret = {
+\t  start: new Date()
+\t};
+\tret.tick = function(s) {
+\t  var end;
+\t  end = new Date();
+\t  return ret.start = end;
+\t};
+\treturn ret;
   },
   xml_attr: function(e, a) {
-    return e.getAttribute(a);
+\treturn e.getAttribute(a);
   }
 });
 
@@ -54,143 +54,143 @@ cldoc.SearchWorker = function() {
   var bsearch, db, load_db, log, search_term;
   db = null;
   log = function(msg) {
-    return self.postMessage({
-      type: 'log',
-      message: msg
-    });
+\treturn self.postMessage({
+\t  type: 'log',
+\t  message: msg
+\t});
   };
   load_db = function(host) {
-    var xhr;
-    xhr = new XMLHttpRequest();
-    xhr.open('GET', host + '/search.json?' + new Date().getTime(), false);
-    xhr.send();
-    return JSON.parse(xhr.responseText);
+\tvar xhr;
+\txhr = new XMLHttpRequest();
+\txhr.open('GET', host + '/search.json?' + new Date().getTime(), false);
+\txhr.send();
+\treturn JSON.parse(xhr.responseText);
   };
   bsearch = (function(_this) {
-    return function(term, l, r, sel) {
-      var mid, rec, ref2, suf, suffix_record;
-      suffix_record = function(i) {
-        return db.suffixes[i][0];
-      };
-      while (l < r) {
-        mid = Math.floor((l + r) / 2);
-        rec = suffix_record(mid);
-        suf = db.records[rec[0]][0].substring(rec[1]);
-        ref2 = sel(suf) ? [mid + 1, r] : [l, mid], l = ref2[0], r = ref2[1];
-      }
-      return [l, r];
-    };
+\treturn function(term, l, r, sel) {
+\t  var mid, rec, ref2, suf, suffix_record;
+\t  suffix_record = function(i) {
+\t\treturn db.suffixes[i][0];
+\t  };
+\t  while (l < r) {
+\t\tmid = Math.floor((l + r) / 2);
+\t\trec = suffix_record(mid);
+\t\tsuf = db.records[rec[0]][0].substring(rec[1]);
+\t\tref2 = sel(suf) ? [mid + 1, r] : [l, mid], l = ref2[0], r = ref2[1];
+\t  }
+\t  return [l, r];
+\t};
   })(this);
   search_term = (function(_this) {
-    return function(term) {
-      var _, end, l, r, ref2, ref3, start, t;
-      if (term.length < 3) {
-        return [0, 0];
-      }
-      l = 0;
-      r = db.suffixes.length;
-      t = term.toLowerCase();
-      ref2 = bsearch(t, 0, db.suffixes.length, function(suf) {
-        return t > suf;
-      }), start = ref2[0], _ = ref2[1];
-      ref3 = bsearch(t, start, db.suffixes.length, function(suf) {
-        return suf.indexOf(t) === 0;
-      }), _ = ref3[0], end = ref3[1];
-      return [start, end];
-    };
+\treturn function(term) {
+\t  var _, end, l, r, ref2, ref3, start, t;
+\t  if (term.length < 3) {
+\t\treturn [0, 0];
+\t  }
+\t  l = 0;
+\t  r = db.suffixes.length;
+\t  t = term.toLowerCase();
+\t  ref2 = bsearch(t, 0, db.suffixes.length, function(suf) {
+\t\treturn t > suf;
+\t  }), start = ref2[0], _ = ref2[1];
+\t  ref3 = bsearch(t, start, db.suffixes.length, function(suf) {
+\t\treturn suf.indexOf(t) === 0;
+\t  }), _ = ref3[0], end = ref3[1];
+\t  return [start, end];
+\t};
   })(this);
   return self.onmessage = (function(_this) {
-    return function(ev) {
-      var end, i, items, j, len, len1, m, o, p, rec, recid, records, ref2, ref3, ref4, ret, rr, start, word, words;
-      m = ev.data;
-      if (db === null) {
-        db = load_db(m.host);
-      }
-      words = m.q.split(/\s+/);
-      records = {};
-      ret = {
-        type: 'result',
-        id: m.id,
-        q: m.q,
-        words: words,
-        records: []
-      };
-      for (j = 0, len = words.length; j < len; j++) {
-        word = words[j];
-        ref2 = search_term(word), start = ref2[0], end = ref2[1];
-        for (i = o = ref3 = start, ref4 = end - 1; o <= ref4; i = o += 1) {
-          items = db.suffixes[i];
-          for (p = 0, len1 = items.length; p < len1; p++) {
-            rec = items[p];
-            recid = rec[0];
-            if (!(recid in records)) {
-              rr = {
-                name: db.records[recid][0],
-                id: db.records[recid][1],
-                score: 0,
-                results: [],
-                suffixhash: {}
-              };
-              ret.records.push(rr);
-              records[recid] = rr;
-            } else {
-              rr = records[recid];
-            }
-            if (!(rec[1] in rr.suffixhash)) {
-              rr.score += 1;
-              rr.results.push([rec[1], rec[1] + word.length]);
-              rr.suffixhash[rec[1]] = true;
-            }
-          }
-        }
-      }
-      ret.records.sort(function(a, b) {
-        var ref5, ref6;
-        return (ref5 = a.score > b.score) != null ? ref5 : (ref6 = a.score < b.score) != null ? ref6 : -{
-          1: 0
-        };
-      });
-      return self.postMessage(ret);
-    };
+\treturn function(ev) {
+\t  var end, i, items, j, len, len1, m, o, p, rec, recid, records, ref2, ref3, ref4, ret, rr, start, word, words;
+\t  m = ev.data;
+\t  if (db === null) {
+\t\tdb = load_db(m.host);
+\t  }
+\t  words = m.q.split(/\s+/);
+\t  records = {};
+\t  ret = {
+\t\ttype: 'result',
+\t\tid: m.id,
+\t\tq: m.q,
+\t\twords: words,
+\t\trecords: []
+\t  };
+\t  for (j = 0, len = words.length; j < len; j++) {
+\t\tword = words[j];
+\t\tref2 = search_term(word), start = ref2[0], end = ref2[1];
+\t\tfor (i = o = ref3 = start, ref4 = end - 1; o <= ref4; i = o += 1) {
+\t\t  items = db.suffixes[i];
+\t\t  for (p = 0, len1 = items.length; p < len1; p++) {
+\t\t\trec = items[p];
+\t\t\trecid = rec[0];
+\t\t\tif (!(recid in records)) {
+\t\t\t  rr = {
+\t\t\t\tname: db.records[recid][0],
+\t\t\t\tid: db.records[recid][1],
+\t\t\t\tscore: 0,
+\t\t\t\tresults: [],
+\t\t\t\tsuffixhash: {}
+\t\t\t  };
+\t\t\t  ret.records.push(rr);
+\t\t\t  records[recid] = rr;
+\t\t\t} else {
+\t\t\t  rr = records[recid];
+\t\t\t}
+\t\t\tif (!(rec[1] in rr.suffixhash)) {
+\t\t\t  rr.score += 1;
+\t\t\t  rr.results.push([rec[1], rec[1] + word.length]);
+\t\t\t  rr.suffixhash[rec[1]] = true;
+\t\t\t}
+\t\t  }
+\t\t}
+\t  }
+\t  ret.records.sort(function(a, b) {
+\t\tvar ref5, ref6;
+\t\treturn (ref5 = a.score > b.score) != null ? ref5 : (ref6 = a.score < b.score) != null ? ref6 : -{
+\t\t  1: 0
+\t\t};
+\t  });
+\t  return self.postMessage(ret);
+\t};
   })(this);
 };
 
 cldoc.SearchDb = (function() {
   function SearchDb() {
-    var blob, ref2, wurl;
-    this.searchid = 0;
-    this.searchcb = null;
-    wurl = (ref2 = window.webkitURL) != null ? ref2 : window.URL;
-    blob = new Blob(['worker = ' + cldoc.SearchWorker.toString() + '; worker();'], {
-      type: 'text/javascript'
-    });
-    this.worker = new Worker(wurl.createObjectURL(blob));
-    this.worker.onmessage = (function(_this) {
-      return function(msg) {
-        var m;
-        m = msg.data;
-        if (m.type === 'log') {
-          return console.log(m.message);
-        } else if (m.type === 'result') {
-          if (m.id !== _this.searchid) {
-            return;
-          }
-          _this.searchid = 0;
-          return _this.searchcb(m);
-        }
-      };
-    })(this);
+\tvar blob, ref2, wurl;
+\tthis.searchid = 0;
+\tthis.searchcb = null;
+\twurl = (ref2 = window.webkitURL) != null ? ref2 : window.URL;
+\tblob = new Blob(['worker = ' + cldoc.SearchWorker.toString() + '; worker();'], {
+\t  type: 'text/javascript'
+\t});
+\tthis.worker = new Worker(wurl.createObjectURL(blob));
+\tthis.worker.onmessage = (function(_this) {
+\t  return function(msg) {
+\t\tvar m;
+\t\tm = msg.data;
+\t\tif (m.type === 'log') {
+\t\t  return console.log(m.message);
+\t\t} else if (m.type === 'result') {
+\t\t  if (m.id !== _this.searchid) {
+\t\t\treturn;
+\t\t  }
+\t\t  _this.searchid = 0;
+\t\t  return _this.searchcb(m);
+\t\t}
+\t  };
+\t})(this);
   }
 
   SearchDb.prototype.search = function(q, cb) {
-    this.searchid += 1;
-    this.searchcb = cb;
-    return this.worker.postMessage({
-      type: 'search',
-      q: q,
-      id: this.searchid,
-      host: cldoc.host
-    });
+\tthis.searchid += 1;
+\tthis.searchcb = cb;
+\treturn this.worker.postMessage({
+\t  type: 'search',
+\t  q: q,
+\t  id: this.searchid,
+\t  host: cldoc.host
+\t});
   };
 
   return SearchDb;
@@ -207,588 +207,588 @@ cldoc.Page = (function() {
   Page.first = true;
 
   Page.search = {
-    db: null
+\tdb: null
   };
 
   Page.request_page = function(page, cb) {
-    var url;
-    if (page in this.pages) {
-      cb(this.pages[page]);
-      return;
-    }
-    url = cldoc.host + '/xml/' + page.replace(/::/g, '.') + '.xml';
-    return $.ajax({
-      url: url,
-      cache: false,
-      success: (function(_this) {
-        return function(data) {
-          _this.pages[page] = {
-            xml: $(data),
-            html: null
-          };
-          return cb(_this.pages[page]);
-        };
-      })(this)
-    });
+\tvar url;
+\tif (page in this.pages) {
+\t  cb(this.pages[page]);
+\t  return;
+\t}
+\turl = cldoc.host + '/xml/' + page.replace(/::/g, '.') + '.xml';
+\treturn $.ajax({
+\t  url: url,
+\t  cache: false,
+\t  success: (function(_this) {
+\t\treturn function(data) {
+\t\t  _this.pages[page] = {
+\t\t\txml: $(data),
+\t\t\thtml: null
+\t\t  };
+\t\t  return cb(_this.pages[page]);
+\t\t};
+\t  })(this)
+\t});
   };
 
   Page.load = function(page, scrollto, updatenav) {
-    cldoc.Sidebar.exit_search();
-    if (page === null || page === 'undefined') {
-      page = this.current_page;
-    }
-    if (!page) {
-      page = 'index';
-    }
-    if (updatenav) {
-      this.push_nav(page, scrollto);
-    }
-    if (this.current_page !== page) {
-      return this.request_page(page, (function(_this) {
-        return function() {
-          return _this.load_page(page, scrollto);
-        };
-      })(this));
-    } else {
-      return this.scroll(page, scrollto);
-    }
+\tcldoc.Sidebar.exit_search();
+\tif (page === null || page === 'undefined') {
+\t  page = this.current_page;
+\t}
+\tif (!page) {
+\t  page = 'index';
+\t}
+\tif (updatenav) {
+\t  this.push_nav(page, scrollto);
+\t}
+\tif (this.current_page !== page) {
+\t  return this.request_page(page, (function(_this) {
+\t\treturn function() {
+\t\t  return _this.load_page(page, scrollto);
+\t\t};
+\t  })(this));
+\t} else {
+\t  return this.scroll(page, scrollto);
+\t}
   };
 
   Page.make_link = function(ref, name, attrs) {
-    var e, k, r, ret, v;
-    if (attrs == null) {
-      attrs = {};
-    }
-    e = cldoc.html_escape;
-    r = this.make_internal_ref(ref);
-    ret = '<a href="' + e(r) + '"';
-    for (k in attrs) {
-      v = attrs[k];
-      ret += ' ' + k + '="' + e(v) + '"';
-    }
-    return ret + '>' + e(name) + '</a>';
+\tvar e, k, r, ret, v;
+\tif (attrs == null) {
+\t  attrs = {};
+\t}
+\te = cldoc.html_escape;
+\tr = this.make_internal_ref(ref);
+\tret = '<a href="' + e(r) + '"';
+\tfor (k in attrs) {
+\t  v = attrs[k];
+\t  ret += ' ' + k + '="' + e(v) + '"';
+\t}
+\treturn ret + '>' + e(name) + '</a>';
   };
 
   Page.load_page = function(page, scrollto) {
-    var brief, content, cpage, data, html, root, sidebar, start, title;
-    this.first = this.current_page === null;
-    start = new Date();
-    this.current_page = page;
-    cpage = this.pages[page];
-    data = cpage.xml;
-    html = cpage.html;
-    $('#cldoc #cldoc_content').children().detach();
-    root = data.children(':first');
-    if (html) {
-      $('#cldoc #cldoc_content').append(html.content);
-      cldoc.Sidebar.load_html(html.sidebar);
-    } else {
-      sidebar = cldoc.Sidebar.load(root);
-      content = this.load_contents(root);
-      cpage.html = {
-        sidebar: sidebar,
-        content: content
-      };
-    }
-    title = root.attr('name');
-    if (!title) {
-      brief = root.children('brief');
-      if (brief.length > 0) {
-        title = brief.text();
-        if (title[title.length - 1] === '.') {
-          title = title.substring(0, title.length - 1);
-        }
-      }
-    }
-    if (!title) {
-      title = 'Documentation';
-    }
-    document.title = title;
-    this.scroll(page, scrollto, true);
-    return $('#cldoc').triggerHandler('page-loaded', [root]);
+\tvar brief, content, cpage, data, html, root, sidebar, start, title;
+\tthis.first = this.current_page === null;
+\tstart = new Date();
+\tthis.current_page = page;
+\tcpage = this.pages[page];
+\tdata = cpage.xml;
+\thtml = cpage.html;
+\t$('#cldoc #cldoc_content').children().detach();
+\troot = data.children(':first');
+\tif (html) {
+\t  $('#cldoc #cldoc_content').append(html.content);
+\t  cldoc.Sidebar.load_html(html.sidebar);
+\t} else {
+\t  sidebar = cldoc.Sidebar.load(root);
+\t  content = this.load_contents(root);
+\t  cpage.html = {
+\t\tsidebar: sidebar,
+\t\tcontent: content
+\t  };
+\t}
+\ttitle = root.attr('name');
+\tif (!title) {
+\t  brief = root.children('brief');
+\t  if (brief.length > 0) {
+\t\ttitle = brief.text();
+\t\tif (title[title.length - 1] === '.') {
+\t\t  title = title.substring(0, title.length - 1);
+\t\t}
+\t  }
+\t}
+\tif (!title) {
+\t  title = 'Documentation';
+\t}
+\tdocument.title = title;
+\tthis.scroll(page, scrollto, true);
+\treturn $('#cldoc').triggerHandler('page-loaded', [root]);
   };
 
   Page.make_external_ref = function(page, id) {
-    if (page[0] === '#') {
-      page = page.substring(1);
-    }
-    if (!id) {
-      return page.replace('/', '#');
-    } else {
-      return page + '#' + id;
-    }
+\tif (page[0] === '#') {
+\t  page = page.substring(1);
+\t}
+\tif (!id) {
+\t  return page.replace('/', '#');
+\t} else {
+\t  return page + '#' + id;
+\t}
   };
 
   Page.make_internal_ref = function(page, id) {
-    if (!page) {
-      return '#index';
-    }
-    if (!id) {
-      return '#' + page.replace('#', '/');
-    } else {
-      return '#' + page + '/' + id;
-    }
+\tif (!page) {
+\t  return '#index';
+\t}
+\tif (!id) {
+\t  return '#' + page.replace('#', '/');
+\t} else {
+\t  return '#' + page + '/' + id;
+\t}
   };
 
   Page.split_ref = function(ref) {
-    var id, page, ref2;
-    ref2 = ref.split('#', 2), page = ref2[0], id = ref2[1];
-    if (!page) {
-      page = 'index';
-    }
-    return [page, id];
+\tvar id, page, ref2;
+\tref2 = ref.split('#', 2), page = ref2[0], id = ref2[1];
+\tif (!page) {
+\t  page = 'index';
+\t}
+\treturn [page, id];
   };
 
   Page.load_ref = function(ref) {
-    var r;
-    r = this.split_ref(ref);
-    return this.load(r[0], r[1], true);
+\tvar r;
+\tr = this.split_ref(ref);
+\treturn this.load(r[0], r[1], true);
   };
 
   Page.make_header = function(item) {
-    var e, id, name, obj, ret, title, type;
-    id = item.attr('id');
-    e = cldoc.html_escape;
-    if (id) {
-      ret = '<span>';
-      type = this.node_type(item);
-      title = item.attr('title');
-      if (type) {
-        ret += '<span class="keyword">' + e(type.title[0]) + '</span>';
-        obj = new type(item);
-        name = obj.full_name_for_display();
-      } else {
-        name = item.attr('name');
-      }
-      if (title) {
-        ret += '<span>' + e(title) + '</span>';
-      } else {
-        if (name) {
-          ret += '<span>' + e(name) + '</span>';
-        } else {
-          ret += '<span>' + e(id) + '</span>';
-        }
-      }
-      return ret;
-    } else {
-      return '';
-    }
+\tvar e, id, name, obj, ret, title, type;
+\tid = item.attr('id');
+\te = cldoc.html_escape;
+\tif (id) {
+\t  ret = '<span>';
+\t  type = this.node_type(item);
+\t  title = item.attr('title');
+\t  if (type) {
+\t\tret += '<span class="keyword">' + e(type.title[0]) + '</span>';
+\t\tobj = new type(item);
+\t\tname = obj.full_name_for_display();
+\t  } else {
+\t\tname = item.attr('name');
+\t  }
+\t  if (title) {
+\t\tret += '<span>' + e(title) + '</span>';
+\t  } else {
+\t\tif (name) {
+\t\t  ret += '<span>' + e(name) + '</span>';
+\t\t} else {
+\t\t  ret += '<span>' + e(id) + '</span>';
+\t\t}
+\t  }
+\t  return ret;
+\t} else {
+\t  return '';
+\t}
   };
 
   Page.load_description = function(page, content) {
-    var desc, doc, h1, id;
-    doc = cldoc.Doc.either(page);
-    id = page.attr('id');
-    if (id) {
-      h1 = $('<h1/>').appendTo(content);
-      h1.attr('id', id);
-      h1.append(this.make_header(page));
-    }
-    if (doc) {
-      desc = $('<div class="description"/>');
-      desc.append(doc);
-      return content.append(desc);
-    }
+\tvar desc, doc, h1, id;
+\tdoc = cldoc.Doc.either(page);
+\tid = page.attr('id');
+\tif (id) {
+\t  h1 = $('<h1/>').appendTo(content);
+\t  h1.attr('id', id);
+\t  h1.append(this.make_header(page));
+\t}
+\tif (doc) {
+\t  desc = $('<div class="description"/>');
+\t  desc.append(doc);
+\t  return content.append(desc);
+\t}
   };
 
   Page.node_type = function(item) {
-    var typename;
-    typename = cldoc.tag(item)[0];
-    if (!(typename in cldoc.Node.types)) {
-      return null;
-    }
-    return cldoc.Node.types[typename];
+\tvar typename;
+\ttypename = cldoc.tag(item)[0];
+\tif (!(typename in cldoc.Node.types)) {
+\t  return null;
+\t}
+\treturn cldoc.Node.types[typename];
   };
 
   Page.load_items = function(page) {
-    var all, container, content, e, group, item, itemcontents, items, j, len, len1, o, ref2, ret, tp, type;
-    all = page.children();
-    content = '';
-    e = cldoc.html_escape;
-    ref2 = cldoc.Node.groups;
-    for (j = 0, len = ref2.length; j < len; j++) {
-      group = ref2[j];
-      items = all.filter(group);
-      if (items.length === 0) {
-        continue;
-      }
-      type = this.node_type(items);
-      if (!type || type === cldoc.Node.types.report) {
-        continue;
-      }
-      content += '<h2 data-cldoc-dynamic="1" id="' + e(type.title[1].toLowerCase()) + '">' + e(type.title[1]) + '</h2>';
-      container = type.render_container();
-      itemcontents = '';
-      for (o = 0, len1 = items.length; o < len1; o++) {
-        item = items[o];
-        item = $(item);
-        if (cldoc.tag(item)[0] !== cldoc.tag(items)[0]) {
-          tp = this.node_type(item);
-        } else {
-          tp = type;
-        }
-        if (tp) {
-          ret = new tp($(item)).render();
-          if (ret) {
-            itemcontents += ret;
-          }
-        }
-      }
-      if (container) {
-        content += container[0] + itemcontents + container[1];
-      } else {
-        content += itemcontents;
-      }
-    }
-    return content;
+\tvar all, container, content, e, group, item, itemcontents, items, j, len, len1, o, ref2, ret, tp, type;
+\tall = page.children();
+\tcontent = '';
+\te = cldoc.html_escape;
+\tref2 = cldoc.Node.groups;
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  group = ref2[j];
+\t  items = all.filter(group);
+\t  if (items.length === 0) {
+\t\tcontinue;
+\t  }
+\t  type = this.node_type(items);
+\t  if (!type || type === cldoc.Node.types.report) {
+\t\tcontinue;
+\t  }
+\t  content += '<h2 data-cldoc-dynamic="1" id="' + e(type.title[1].toLowerCase()) + '">' + e(type.title[1]) + '</h2>';
+\t  container = type.render_container();
+\t  itemcontents = '';
+\t  for (o = 0, len1 = items.length; o < len1; o++) {
+\t\titem = items[o];
+\t\titem = $(item);
+\t\tif (cldoc.tag(item)[0] !== cldoc.tag(items)[0]) {
+\t\t  tp = this.node_type(item);
+\t\t} else {
+\t\t  tp = type;
+\t\t}
+\t\tif (tp) {
+\t\t  ret = new tp($(item)).render();
+\t\t  if (ret) {
+\t\t\titemcontents += ret;
+\t\t  }
+\t\t}
+\t  }
+\t  if (container) {
+\t\tcontent += container[0] + itemcontents + container[1];
+\t  } else {
+\t\tcontent += itemcontents;
+\t  }
+\t}
+\treturn content;
   };
 
   Page.bind_links = function(container) {
-    return container.find('a').on('click', (function(_this) {
-      return function(e) {
-        var ref;
-        ref = $(e.delegateTarget).attr('href');
-        if (ref[0] === '#') {
-          _this.load_ref(_this.make_external_ref(ref));
-          return false;
-        } else {
-          return true;
-        }
-      };
-    })(this));
+\treturn container.find('a').on('click', (function(_this) {
+\t  return function(e) {
+\t\tvar ref;
+\t\tref = $(e.delegateTarget).attr('href');
+\t\tif (ref[0] === '#') {
+\t\t  _this.load_ref(_this.make_external_ref(ref));
+\t\t  return false;
+\t\t} else {
+\t\t  return true;
+\t\t}
+\t  };
+\t})(this));
   };
 
   Page.load_pagenav = function(page, content) {
-    var h2cnt, h2li, h2ol, h3cnt, pagenav, ul;
-    if (this.node_type(page) !== cldoc.Category) {
-      return;
-    }
-    pagenav = $('#cldoc_sidebar_pagenav');
-    ul = $('<ol/>');
-    h2cnt = 0;
-    h2li = null;
-    h2ol = null;
-    h3cnt = 0;
-    content.find('h2,h3').each((function(_this) {
-      return function(i, e) {
-        var a, h, id, ish2, li, t;
-        h = $(e);
-        if (h.attr('data-cldoc-dynamic')) {
-          return;
-        }
-        id = h.text();
-        ish2 = e.tagName === 'H2';
-        if (ish2) {
-          h2cnt += 1;
-          t = h2cnt + '. ' + id;
-        } else {
-          h3cnt += 1;
-          t = h2cnt + '.' + h3cnt + '. ' + id;
-        }
-        h.text(t);
-        h.attr('id', id);
-        a = $('<a/>', {
-          href: _this.make_internal_ref(_this.current_page, id)
-        }).text(t);
-        li = $('<li/>').append(a);
-        if (!ish2 && h2li !== null) {
-          if (h2ol === null) {
-            h2ol = $('<ol/>').appendTo(h2li);
-          }
-          return h2ol.append(li);
-        } else {
-          if (ish2 && h2li === null) {
-            h2li = li;
-            h2ol = null;
-          }
-          return li.appendTo(ul);
-        }
-      };
-    })(this));
-    this.bind_links(ul);
-    return pagenav.append(ul);
+\tvar h2cnt, h2li, h2ol, h3cnt, pagenav, ul;
+\tif (this.node_type(page) !== cldoc.Category) {
+\t  return;
+\t}
+\tpagenav = $('#cldoc_sidebar_pagenav');
+\tul = $('<ol/>');
+\th2cnt = 0;
+\th2li = null;
+\th2ol = null;
+\th3cnt = 0;
+\tcontent.find('h2,h3').each((function(_this) {
+\t  return function(i, e) {
+\t\tvar a, h, id, ish2, li, t;
+\t\th = $(e);
+\t\tif (h.attr('data-cldoc-dynamic')) {
+\t\t  return;
+\t\t}
+\t\tid = h.text();
+\t\tish2 = e.tagName === 'H2';
+\t\tif (ish2) {
+\t\t  h2cnt += 1;
+\t\t  t = h2cnt + '. ' + id;
+\t\t} else {
+\t\t  h3cnt += 1;
+\t\t  t = h2cnt + '.' + h3cnt + '. ' + id;
+\t\t}
+\t\th.text(t);
+\t\th.attr('id', id);
+\t\ta = $('<a/>', {
+\t\t  href: _this.make_internal_ref(_this.current_page, id)
+\t\t}).text(t);
+\t\tli = $('<li/>').append(a);
+\t\tif (!ish2 && h2li !== null) {
+\t\t  if (h2ol === null) {
+\t\t\th2ol = $('<ol/>').appendTo(h2li);
+\t\t  }
+\t\t  return h2ol.append(li);
+\t\t} else {
+\t\t  if (ish2 && h2li === null) {
+\t\t\th2li = li;
+\t\t\th2ol = null;
+\t\t  }
+\t\t  return li.appendTo(ul);
+\t\t}
+\t  };
+\t})(this));
+\tthis.bind_links(ul);
+\treturn pagenav.append(ul);
   };
 
   Page.load_contents = function(page) {
-    var content, items;
-    content = $('#cldoc #cldoc_content');
-    content.children().detach();
-    this.load_description(page, content);
-    items = $(this.load_items(page));
-    content.append(items);
-    this.bind_links(content);
-    this.load_pagenav(page, content);
-    return content.children();
+\tvar content, items;
+\tcontent = $('#cldoc #cldoc_content');
+\tcontent.children().detach();
+\tthis.load_description(page, content);
+\titems = $(this.load_items(page));
+\tcontent.append(items);
+\tthis.bind_links(content);
+\tthis.load_pagenav(page, content);
+\treturn content.children();
   };
 
   Page.push_nav = function(page, scrollto) {
-    var hash, prevpage, prevscrollto, ref2;
-    hash = document.location.hash;
-    ref2 = this.split_ref(this.make_external_ref(hash)), prevpage = ref2[0], prevscrollto = ref2[1];
-    return history.pushState({
-      page: prevpage,
-      scrollto: prevscrollto
-    }, page, this.make_internal_ref(page, scrollto));
+\tvar hash, prevpage, prevscrollto, ref2;
+\thash = document.location.hash;
+\tref2 = this.split_ref(this.make_external_ref(hash)), prevpage = ref2[0], prevscrollto = ref2[1];
+\treturn history.pushState({
+\t  page: prevpage,
+\t  scrollto: prevscrollto
+\t}, page, this.make_internal_ref(page, scrollto));
   };
 
   Page.route = function() {
-    var hash, m, page, route, scrollto;
-    hash = document.location.hash.substr(1);
-    route = new RegExp('^([^/]+)(/(.*))?$');
-    m = route.exec(hash);
-    page = '';
-    scrollto = '';
-    if (!m) {
-      page = 'index';
-    } else {
-      page = m[1];
-      scrollto = m[3];
-    }
-    $(window).on('popstate', (function(_this) {
-      return function(e) {
-        var state;
-        if (e.originalEvent.state) {
-          state = e.originalEvent.state;
-          if (state.page !== _this.current_page) {
-            return _this.load(state.page, state.scrollto, false);
-          } else {
-            return _this.select(state.scrollto, false);
-          }
-        }
-      };
-    })(this));
-    return this.load(page, scrollto);
+\tvar hash, m, page, route, scrollto;
+\thash = document.location.hash.substr(1);
+\troute = new RegExp('^([^/]+)(/(.*))?$');
+\tm = route.exec(hash);
+\tpage = '';
+\tscrollto = '';
+\tif (!m) {
+\t  page = 'index';
+\t} else {
+\t  page = m[1];
+\t  scrollto = m[3];
+\t}
+\t$(window).on('popstate', (function(_this) {
+\t  return function(e) {
+\t\tvar state;
+\t\tif (e.originalEvent.state) {
+\t\t  state = e.originalEvent.state;
+\t\t  if (state.page !== _this.current_page) {
+\t\t\treturn _this.load(state.page, state.scrollto, false);
+\t\t  } else {
+\t\t\treturn _this.select(state.scrollto, false);
+\t\t  }
+\t\t}
+\t  };
+\t})(this));
+\treturn this.load(page, scrollto);
   };
 
   Page.select = function(scrollto, doanimate) {
-    var inopts, outopts;
-    scrollto = $(scrollto);
-    if (!scrollto && !this.selected_element) {
-      return;
-    }
-    if (scrollto && this.selected_element && scrollto.attr('id') === this.selected_element.attr('id')) {
-      return;
-    }
-    if (doanimate) {
-      inopts = {
-        'duration': 2000,
-        'easing': 'easeInOutExpo'
-      };
-      outopts = {
-        'duration': 100,
-        'easing': 'easeInOutExpo'
-      };
-    } else {
-      inopts = {
-        'duration': 0
-      };
-      outopts = {
-        'duration': 0
-      };
-    }
-    if (this.selected_element) {
-      this.selected_element.removeClass('selected', outopts);
-      this.selected_element = null;
-    }
-    if (scrollto) {
-      this.selected_element = $(scrollto);
-      return this.selected_element.addClass('selected', inopts);
-    }
+\tvar inopts, outopts;
+\tscrollto = $(scrollto);
+\tif (!scrollto && !this.selected_element) {
+\t  return;
+\t}
+\tif (scrollto && this.selected_element && scrollto.attr('id') === this.selected_element.attr('id')) {
+\t  return;
+\t}
+\tif (doanimate) {
+\t  inopts = {
+\t\t'duration': 2000,
+\t\t'easing': 'easeInOutExpo'
+\t  };
+\t  outopts = {
+\t\t'duration': 100,
+\t\t'easing': 'easeInOutExpo'
+\t  };
+\t} else {
+\t  inopts = {
+\t\t'duration': 0
+\t  };
+\t  outopts = {
+\t\t'duration': 0
+\t  };
+\t}
+\tif (this.selected_element) {
+\t  this.selected_element.removeClass('selected', outopts);
+\t  this.selected_element = null;
+\t}
+\tif (scrollto) {
+\t  this.selected_element = $(scrollto);
+\t  return this.selected_element.addClass('selected', inopts);
+\t}
   };
 
   Page.scroll = function(page, scrollto, newpage) {
-    var e, istopandnew, top;
-    if (!scrollto) {
-      return;
-    }
-    if (page === null) {
-      page = this.current_page;
-    }
-    e = $(document).find('#' + scrollto.replace(/([:() +])/g, '\\$1')).first();
-    if (e && e.length > 0) {
-      e = $(e);
-      top = e.offset().top - 10;
-      istopandnew = newpage && e.is('h1');
-      if (this.first || istopandnew) {
-        if (!istopandnew) {
-          this.select(e);
-        } else {
-          this.select();
-        }
-        $('html, body').scrollTop(top);
-      } else {
-        this.select(e, true);
-        $('html, body').animate({
-          scrollTop: top
-        }, 1000, 'easeInOutExpo');
-      }
-    } else {
-      this.select(null, true);
-    }
-    return this.first = false;
+\tvar e, istopandnew, top;
+\tif (!scrollto) {
+\t  return;
+\t}
+\tif (page === null) {
+\t  page = this.current_page;
+\t}
+\te = $(document).find('#' + scrollto.replace(/([:() +])/g, '\\$1')).first();
+\tif (e && e.length > 0) {
+\t  e = $(e);
+\t  top = e.offset().top - 10;
+\t  istopandnew = newpage && e.is('h1');
+\t  if (this.first || istopandnew) {
+\t\tif (!istopandnew) {
+\t\t  this.select(e);
+\t\t} else {
+\t\t  this.select();
+\t\t}
+\t\t$('html, body').scrollTop(top);
+\t  } else {
+\t\tthis.select(e, true);
+\t\t$('html, body').animate({
+\t\t  scrollTop: top
+\t\t}, 1000, 'easeInOutExpo');
+\t  }
+\t} else {
+\t  this.select(null, true);
+\t}
+\treturn this.first = false;
   };
 
   Page.render_search = function(result) {
-    var a, content, cpage, data, end, item, j, len, len1, len2, o, p, page, pageid, pageidesc, parts, prev, records, ref2, ref3, ref4, ref5, res, sortfunc, start, t, tag;
-    content = $('#cldoc_content');
-    content.children().detach();
-    $('<h1><span class="keyword">Search</span> </h1>').append(result.q).appendTo(content);
-    if (result.records.length === 0) {
-      $('<span class="info">There were no results for this search query.</span>').appendTo(content);
-      cldoc.Sidebar.render_search([]);
-      $('html, body').scrollTop(0);
-      return;
-    }
-    records = [];
-    ref2 = result.records;
-    for (j = 0, len = ref2.length; j < len; j++) {
-      res = ref2[j];
-      ref3 = this.split_ref(res.id), page = ref3[0], pageid = ref3[1];
-      if (!page in this.pages) {
-        continue;
-      }
-      cpage = this.pages[page];
-      data = cpage.xml;
-      pageidesc = pageid.replace(/([:() ])/g, '\\$1');
-      item = data.find('#' + pageidesc);
-      if (item.length !== 1) {
-        continue;
-      }
-      tag = cldoc.tag(item)[0];
-      res.type = tag;
-      res.brief = new cldoc.Doc(item.children('brief'));
-      res.page = page;
-      res.qid = pageid;
-      records.push(res);
-    }
-    sortfunc = function(a, b) {
-      var ai, bi;
-      if (a.score !== b.score) {
-        if (a.score > b.score) {
-          return -1;
-        } else {
-          return 1;
-        }
-      }
-      if (a.type !== b.type) {
-        ai = cldoc.Node.order[a.type];
-        bi = cldoc.Node.order[b.type];
-        if (ai !== bi) {
-          if (ai < bi) {
-            return -1;
-          } else {
-            return 1;
-          }
-        }
-      }
-      if (a.name < b.name) {
-        return -1;
-      } else {
-        return 1;
-      }
-    };
-    records.sort(sortfunc);
-    t = $('<table class="search_results"/>').appendTo(content);
-    for (o = 0, len1 = records.length; o < len1; o++) {
-      res = records[o];
-      res.results.sort(function(a, b) {
-        if (a[0] !== b[0]) {
-          if (a[0] < b[0]) {
-            return -1;
-          } else {
-            return 1;
-          }
-        }
-        if (a[1] > b[1]) {
-          return -1;
-        }
-        if (a[1] < b[1]) {
-          return 1;
-        }
-        return 0;
-      });
-      prev = 0;
-      parts = [];
-      ref4 = res.results;
-      for (p = 0, len2 = ref4.length; p < len2; p++) {
-        ref5 = ref4[p], start = ref5[0], end = ref5[1];
-        if (start < prev) {
-          continue;
-        }
-        parts.push(res.qid.substring(prev, start));
-        parts.push($('<span class="search_result"/>').text(res.qid.substring(start, end)));
-        prev = end;
-      }
-      parts.push(res.qid.substring(prev, res.qid.length));
-      a = $('<a/>', {
-        href: this.make_internal_ref(res.id)
-      }).html(parts);
-      a.on('click', (function(_this) {
-        return function(res) {
-          return function() {
-            return _this.load_ref(res.id);
-          };
-        };
-      })(this)(res));
-      $('<tr/>').append($('<td class="keyword"/>').text(res.type)).append($('<td class="identifier"/>').html(a)).appendTo(t);
-      $('<tr/>').append($('<td/>')).append($('<td/>').html(res.brief.render())).appendTo(t);
-    }
-    cldoc.Sidebar.render_search(records);
-    return $('html, body').scrollTop(0);
+\tvar a, content, cpage, data, end, item, j, len, len1, len2, o, p, page, pageid, pageidesc, parts, prev, records, ref2, ref3, ref4, ref5, res, sortfunc, start, t, tag;
+\tcontent = $('#cldoc_content');
+\tcontent.children().detach();
+\t$('<h1><span class="keyword">Search</span> </h1>').append(result.q).appendTo(content);
+\tif (result.records.length === 0) {
+\t  $('<span class="info">There were no results for this search query.</span>').appendTo(content);
+\t  cldoc.Sidebar.render_search([]);
+\t  $('html, body').scrollTop(0);
+\t  return;
+\t}
+\trecords = [];
+\tref2 = result.records;
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  res = ref2[j];
+\t  ref3 = this.split_ref(res.id), page = ref3[0], pageid = ref3[1];
+\t  if (!page in this.pages) {
+\t\tcontinue;
+\t  }
+\t  cpage = this.pages[page];
+\t  data = cpage.xml;
+\t  pageidesc = pageid.replace(/([:() ])/g, '\\$1');
+\t  item = data.find('#' + pageidesc);
+\t  if (item.length !== 1) {
+\t\tcontinue;
+\t  }
+\t  tag = cldoc.tag(item)[0];
+\t  res.type = tag;
+\t  res.brief = new cldoc.Doc(item.children('brief'));
+\t  res.page = page;
+\t  res.qid = pageid;
+\t  records.push(res);
+\t}
+\tsortfunc = function(a, b) {
+\t  var ai, bi;
+\t  if (a.score !== b.score) {
+\t\tif (a.score > b.score) {
+\t\t  return -1;
+\t\t} else {
+\t\t  return 1;
+\t\t}
+\t  }
+\t  if (a.type !== b.type) {
+\t\tai = cldoc.Node.order[a.type];
+\t\tbi = cldoc.Node.order[b.type];
+\t\tif (ai !== bi) {
+\t\t  if (ai < bi) {
+\t\t\treturn -1;
+\t\t  } else {
+\t\t\treturn 1;
+\t\t  }
+\t\t}
+\t  }
+\t  if (a.name < b.name) {
+\t\treturn -1;
+\t  } else {
+\t\treturn 1;
+\t  }
+\t};
+\trecords.sort(sortfunc);
+\tt = $('<table class="search_results"/>').appendTo(content);
+\tfor (o = 0, len1 = records.length; o < len1; o++) {
+\t  res = records[o];
+\t  res.results.sort(function(a, b) {
+\t\tif (a[0] !== b[0]) {
+\t\t  if (a[0] < b[0]) {
+\t\t\treturn -1;
+\t\t  } else {
+\t\t\treturn 1;
+\t\t  }
+\t\t}
+\t\tif (a[1] > b[1]) {
+\t\t  return -1;
+\t\t}
+\t\tif (a[1] < b[1]) {
+\t\t  return 1;
+\t\t}
+\t\treturn 0;
+\t  });
+\t  prev = 0;
+\t  parts = [];
+\t  ref4 = res.results;
+\t  for (p = 0, len2 = ref4.length; p < len2; p++) {
+\t\tref5 = ref4[p], start = ref5[0], end = ref5[1];
+\t\tif (start < prev) {
+\t\t  continue;
+\t\t}
+\t\tparts.push(res.qid.substring(prev, start));
+\t\tparts.push($('<span class="search_result"/>').text(res.qid.substring(start, end)));
+\t\tprev = end;
+\t  }
+\t  parts.push(res.qid.substring(prev, res.qid.length));
+\t  a = $('<a/>', {
+\t\thref: this.make_internal_ref(res.id)
+\t  }).html(parts);
+\t  a.on('click', (function(_this) {
+\t\treturn function(res) {
+\t\t  return function() {
+\t\t\treturn _this.load_ref(res.id);
+\t\t  };
+\t\t};
+\t  })(this)(res));
+\t  $('<tr/>').append($('<td class="keyword"/>').text(res.type)).append($('<td class="identifier"/>').html(a)).appendTo(t);
+\t  $('<tr/>').append($('<td/>')).append($('<td/>').html(res.brief.render())).appendTo(t);
+\t}
+\tcldoc.Sidebar.render_search(records);
+\treturn $('html, body').scrollTop(0);
   };
 
   Page.search_result = function(result) {
-    var j, len, page, pageid, pagereqcount, pages, record, ref2, ref3, results1;
-    pagereqcount = 0;
-    pages = {};
-    ref2 = result.records;
-    for (j = 0, len = ref2.length; j < len; j++) {
-      record = ref2[j];
-      ref3 = this.split_ref(record.id), page = ref3[0], pageid = ref3[1];
-      if (page in pages) {
-        continue;
-      }
-      pagereqcount += 1;
-      pages[page] = true;
-    }
-    if (pagereqcount === 0) {
-      this.render_search(result);
-    }
-    results1 = [];
-    for (page in pages) {
-      results1.push(this.request_page(page, (function(_this) {
-        return function() {
-          pagereqcount -= 1;
-          if (pagereqcount === 0) {
-            return _this.render_search(result);
-          }
-        };
-      })(this)));
-    }
-    return results1;
+\tvar j, len, page, pageid, pagereqcount, pages, record, ref2, ref3, results1;
+\tpagereqcount = 0;
+\tpages = {};
+\tref2 = result.records;
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  record = ref2[j];
+\t  ref3 = this.split_ref(record.id), page = ref3[0], pageid = ref3[1];
+\t  if (page in pages) {
+\t\tcontinue;
+\t  }
+\t  pagereqcount += 1;
+\t  pages[page] = true;
+\t}
+\tif (pagereqcount === 0) {
+\t  this.render_search(result);
+\t}
+\tresults1 = [];
+\tfor (page in pages) {
+\t  results1.push(this.request_page(page, (function(_this) {
+\t\treturn function() {
+\t\t  pagereqcount -= 1;
+\t\t  if (pagereqcount === 0) {
+\t\t\treturn _this.render_search(result);
+\t\t  }
+\t\t};
+\t  })(this)));
+\t}
+\treturn results1;
   };
 
   Page.search = function(q) {
-    if (q.length < 3) {
-      return false;
-    }
-    if (!this.search.db) {
-      this.search.db = new cldoc.SearchDb();
-    }
-    this.search.db.search(q, (function(_this) {
-      return function(res) {
-        return _this.search_result(res);
-      };
-    })(this));
-    return true;
+\tif (q.length < 3) {
+\t  return false;
+\t}
+\tif (!this.search.db) {
+\t  this.search.db = new cldoc.SearchDb();
+\t}
+\tthis.search.db.search(q, (function(_this) {
+\t  return function(res) {
+\t\treturn _this.search_result(res);
+\t  };
+\t})(this));
+\treturn true;
   };
 
   Page.exit_search = function() {
-    var ref;
-    ref = Page.make_external_ref(document.location.hash.substring(1));
-    cldoc.Sidebar.exit_search();
-    this.current_page = null;
-    return this.load_ref(ref);
+\tvar ref;
+\tref = Page.make_external_ref(document.location.hash.substring(1));
+\tcldoc.Sidebar.exit_search();
+\tthis.current_page = null;
+\treturn this.load_ref(ref);
   };
 
   return Page;
@@ -799,178 +799,178 @@ cldoc.Sidebar = (function() {
   function Sidebar() {}
 
   Sidebar.init = function() {
-    var close, div, exitsearch, icon, input, it, items, sidebar;
-    sidebar = $('#cldoc #cldoc_sidebar');
-    if (!sidebar) {
-      return;
-    }
-    items = $('<div/>').attr('id', 'cldoc_sidebar_items');
-    it = items[0];
-    items.on('DOMSubtreeModified', (function(_this) {
-      return function(e) {
-        if (it.scrollHeight > it.clientHeight) {
-          return $(it).removeClass('hide_scrollbar');
-        } else {
-          return $(it).addClass('hide_scrollbar');
-        }
-      };
-    })(this));
-    sidebar.append(items);
-    div = $('<div/>').attr('id', 'cldoc_search');
-    icon = $('<div class="icon"/>');
-    close = $('<div class="close" title="Cancel search"/>');
-    input = $('<input type="text" accesskey="s" title="Search documentation (Alt+S)"/>');
-    items = $().add(div).add(icon).add(close);
-    input.on('focus', function(e) {
-      return items.addClass('focus');
-    });
-    $('body').on('keydown', function(e) {
-      if (e.altKey && e.keyCode === 83) {
-        input.focus();
-        input.select();
-        return true;
-      }
-    });
-    input.on('blur', function() {
-      return items.removeClass('focus');
-    });
-    icon.on('click', function() {
-      return input.focus();
-    });
-    exitsearch = function() {
-      input.val('');
-      input.blur();
-      return cldoc.Page.exit_search();
-    };
-    close.on('click', exitsearch);
-    input.on('keypress', function(e) {
-      if (e.which === 13) {
-        cldoc.Page.search(input.val());
-        return true;
-      }
-    });
-    input.on('keydown', function(e) {
-      if (e.keyCode === 27) {
-        return exitsearch();
-      }
-    });
-    div.append(icon);
-    div.append(input);
-    div.append(close);
-    return sidebar.append(div);
+\tvar close, div, exitsearch, icon, input, it, items, sidebar;
+\tsidebar = $('#cldoc #cldoc_sidebar');
+\tif (!sidebar) {
+\t  return;
+\t}
+\titems = $('<div/>').attr('id', 'cldoc_sidebar_items');
+\tit = items[0];
+\titems.on('DOMSubtreeModified', (function(_this) {
+\t  return function(e) {
+\t\tif (it.scrollHeight > it.clientHeight) {
+\t\t  return $(it).removeClass('hide_scrollbar');
+\t\t} else {
+\t\t  return $(it).addClass('hide_scrollbar');
+\t\t}
+\t  };
+\t})(this));
+\tsidebar.append(items);
+\tdiv = $('<div/>').attr('id', 'cldoc_search');
+\ticon = $('<div class="icon"/>');
+\tclose = $('<div class="close" title="Cancel search"/>');
+\tinput = $('<input type="text" accesskey="s" title="Search documentation (Alt+S)"/>');
+\titems = $().add(div).add(icon).add(close);
+\tinput.on('focus', function(e) {
+\t  return items.addClass('focus');
+\t});
+\t$('body').on('keydown', function(e) {
+\t  if (e.altKey && e.keyCode === 83) {
+\t\tinput.focus();
+\t\tinput.select();
+\t\treturn true;
+\t  }
+\t});
+\tinput.on('blur', function() {
+\t  return items.removeClass('focus');
+\t});
+\ticon.on('click', function() {
+\t  return input.focus();
+\t});
+\texitsearch = function() {
+\t  input.val('');
+\t  input.blur();
+\t  return cldoc.Page.exit_search();
+\t};
+\tclose.on('click', exitsearch);
+\tinput.on('keypress', function(e) {
+\t  if (e.which === 13) {
+\t\tcldoc.Page.search(input.val());
+\t\treturn true;
+\t  }
+\t});
+\tinput.on('keydown', function(e) {
+\t  if (e.keyCode === 27) {
+\t\treturn exitsearch();
+\t  }
+\t});
+\tdiv.append(icon);
+\tdiv.append(input);
+\tdiv.append(close);
+\treturn sidebar.append(div);
   };
 
   Sidebar.render_search = function(results) {
-    return $('#cldoc_sidebar').addClass('search');
+\treturn $('#cldoc_sidebar').addClass('search');
   };
 
   Sidebar.exit_search = function() {
-    return $('#cldoc_sidebar').removeClass('search');
+\treturn $('#cldoc_sidebar').removeClass('search');
   };
 
   Sidebar.load_html = function(html) {
-    var items;
-    items = $('#cldoc #cldoc_sidebar #cldoc_sidebar_items');
-    items.children().detach();
-    return items.append(html);
+\tvar items;
+\titems = $('#cldoc #cldoc_sidebar #cldoc_sidebar_items');
+\titems.children().detach();
+\treturn items.append(html);
   };
 
   Sidebar.load = function(page) {
-    var c, div, e, group, head, id, items, j, l, len, ln, name, onpage, parts, ref2;
-    items = $('#cldoc #cldoc_sidebar #cldoc_sidebar_items');
-    e = cldoc.html_escape;
-    if (items.length === 0) {
-      return null;
-    }
-    items.children().detach();
-    head = cldoc.Page.make_header(page);
-    if (head) {
-      div = '<div class="back"><div class="name">';
-      div += head;
-      id = page.attr('id');
-      parts = id.split('::');
-      l = parts.slice(0, parts.length - 1).join('::');
-      name = '<span class="arrow">&crarr;</span> ';
-      if (parts.length === 1) {
-        name += '<span>Index</span>';
-      } else {
-        name += '<span>' + e(parts[parts.length - 2]) + '</span>';
-      }
-      ln = cldoc.Page.make_internal_ref(l);
-      div += '</div><a href="' + e(ln) + '">' + name + '</a></div>';
-      items.append($(div));
-    }
-    items.append($('<div id="cldoc_sidebar_pagenav"/>'));
-    onpage = page.children();
-    c = '';
-    ref2 = cldoc.Node.groups;
-    for (j = 0, len = ref2.length; j < len; j++) {
-      group = ref2[j];
-      c += this.load_group(page, onpage.filter(group));
-    }
-    items.append($(c));
-    cldoc.Page.bind_links(items);
-    return $('#cldoc_sidebar_items').children();
+\tvar c, div, e, group, head, id, items, j, l, len, ln, name, onpage, parts, ref2;
+\titems = $('#cldoc #cldoc_sidebar #cldoc_sidebar_items');
+\te = cldoc.html_escape;
+\tif (items.length === 0) {
+\t  return null;
+\t}
+\titems.children().detach();
+\thead = cldoc.Page.make_header(page);
+\tif (head) {
+\t  div = '<div class="back"><div class="name">';
+\t  div += head;
+\t  id = page.attr('id');
+\t  parts = id.split('::');
+\t  l = parts.slice(0, parts.length - 1).join('::');
+\t  name = '<span class="arrow">&crarr;</span> ';
+\t  if (parts.length === 1) {
+\t\tname += '<span>Index</span>';
+\t  } else {
+\t\tname += '<span>' + e(parts[parts.length - 2]) + '</span>';
+\t  }
+\t  ln = cldoc.Page.make_internal_ref(l);
+\t  div += '</div><a href="' + e(ln) + '">' + name + '</a></div>';
+\t  items.append($(div));
+\t}
+\titems.append($('<div id="cldoc_sidebar_pagenav"/>'));
+\tonpage = page.children();
+\tc = '';
+\tref2 = cldoc.Node.groups;
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  group = ref2[j];
+\t  c += this.load_group(page, onpage.filter(group));
+\t}
+\titems.append($(c));
+\tcldoc.Page.bind_links(items);
+\treturn $('#cldoc_sidebar_items').children();
   };
 
   Sidebar.load_group = function(page, items) {
-    var brief, e, ftag, isprot, isstat, isvirt, item, j, len, nm, ret, tp, type;
-    if (items.length === 0) {
-      return '';
-    }
-    ftag = cldoc.tag($(items[0]))[0];
-    type = cldoc.Page.node_type(items);
-    if (!type) {
-      return '';
-    }
-    e = cldoc.html_escape;
-    ret = '<div class="subtitle">' + e(type.title[1]) + '</div>';
-    ret += '<ul>';
-    for (j = 0, len = items.length; j < len; j++) {
-      item = items[j];
-      item = $(item);
-      if (cldoc.tag(item)[0] !== ftag) {
-        tp = cldoc.Page.node_type(item);
-      } else {
-        tp = type;
-      }
-      if (!tp) {
-        continue;
-      }
-      item = new tp(item);
-      if ('render_sidebar' in item) {
-        ret += item.render_sidebar();
-        continue;
-      }
-      ret += '<li>';
-      nm = item.sidebar_name();
-      if (item.ref) {
-        href = cldoc.Page.make_internal_ref(item.ref);
-      } else {
-        href = cldoc.Page.make_internal_ref(cldoc.Page.current_page, item.id);
-      }
-      ret += '<a href="' + e(href) + '">' + e(nm) + '<span class="counter"></span></a>';
-      isvirt = item.node.attr('virtual');
-      isprot = item.node.attr('access') === 'protected';
-      isstat = item.node.attr('static');
-      if (isprot && isvirt) {
-        ret += '<span class="protected virtual">p&nbsp;v</span>';
-      } else if (isprot && isstat) {
-        ret += '<span class="static protected">s&nbsp;p</span>';
-      } else if (isprot) {
-        ret += '<span class="protected">p</span>';
-      } else if (isstat) {
-        ret += '<span class="static">s</span>';
-      } else if (isvirt) {
-        ret += '<span class="virtual">v</span>';
-      }
-      brief = new cldoc.Doc(item.brief).render();
-      if (brief) {
-        ret += brief;
-      }
-      ret += '</li>';
-    }
-    return ret + '</ul>';
+\tvar brief, e, ftag, isprot, isstat, isvirt, item, j, len, nm, ret, tp, type;
+\tif (items.length === 0) {
+\t  return '';
+\t}
+\tftag = cldoc.tag($(items[0]))[0];
+\ttype = cldoc.Page.node_type(items);
+\tif (!type) {
+\t  return '';
+\t}
+\te = cldoc.html_escape;
+\tret = '<div class="subtitle">' + e(type.title[1]) + '</div>';
+\tret += '<ul>';
+\tfor (j = 0, len = items.length; j < len; j++) {
+\t  item = items[j];
+\t  item = $(item);
+\t  if (cldoc.tag(item)[0] !== ftag) {
+\t\ttp = cldoc.Page.node_type(item);
+\t  } else {
+\t\ttp = type;
+\t  }
+\t  if (!tp) {
+\t\tcontinue;
+\t  }
+\t  item = new tp(item);
+\t  if ('render_sidebar' in item) {
+\t\tret += item.render_sidebar();
+\t\tcontinue;
+\t  }
+\t  ret += '<li>';
+\t  nm = item.sidebar_name();
+\t  if (item.ref) {
+\t\thref = cldoc.Page.make_internal_ref(item.ref);
+\t  } else {
+\t\thref = cldoc.Page.make_internal_ref(cldoc.Page.current_page, item.id);
+\t  }
+\t  ret += '<a href="' + e(href) + '">' + e(nm) + '<span class="counter"></span></a>';
+\t  isvirt = item.node.attr('virtual');
+\t  isprot = item.node.attr('access') === 'protected';
+\t  isstat = item.node.attr('static');
+\t  if (isprot && isvirt) {
+\t\tret += '<span class="protected virtual">p&nbsp;v</span>';
+\t  } else if (isprot && isstat) {
+\t\tret += '<span class="static protected">s&nbsp;p</span>';
+\t  } else if (isprot) {
+\t\tret += '<span class="protected">p</span>';
+\t  } else if (isstat) {
+\t\tret += '<span class="static">s</span>';
+\t  } else if (isvirt) {
+\t\tret += '<span class="virtual">v</span>';
+\t  }
+\t  brief = new cldoc.Doc(item.brief).render();
+\t  if (brief) {
+\t\tret += brief;
+\t  }
+\t  ret += '</li>';
+\t}
+\treturn ret + '</ul>';
   };
 
   return Sidebar;
@@ -981,8 +981,8 @@ cldoc.Mixin = function() {
   var base, j, mixin, mixins;
   base = arguments[0], mixins = 2 <= arguments.length ? slice.call(arguments, 1) : [];
   for (j = mixins.length - 1; j >= 0; j += -1) {
-    mixin = mixins[j];
-    base = mixin(base);
+\tmixin = mixins[j];
+\tbase = mixin(base);
   }
   return base;
 };
@@ -993,71 +993,71 @@ cldoc.Node = (function() {
   Node.groups = ['coverage', 'arguments', 'references', 'category', 'namespace', 'templatetypeparameter, templatenontypeparameter', 'base', 'implements', 'subclass', 'implementedby', 'typedef', 'class, classtemplate', 'gobject\\:class', 'gobject\\:interface', 'gobject\\:boxed', 'struct, structtemplate', 'enum', 'field, union', 'variable', 'gobject\\:property', 'constructor', 'destructor', 'method, methodtemplate', 'function, functiontemplate', 'report'];
 
   Node.order = {
-    'category': 0,
-    'namespace': 1,
-    'templatetypeparameter': 2,
-    'templatenontypeparameter': 2,
-    'base': 3,
-    'implements': 3,
-    'subclass': 4,
-    'implementedby': 4,
-    'typedef': 5,
-    'class': 6,
-    'classtemplate': 6,
-    'gobjectclass': 6,
-    'gobjectinterface': 7,
-    'struct': 8,
-    'structtemplate': 8,
-    'gobjectboxed': 8,
-    'enum': 9,
-    'enumvalue': 10,
-    'field': 11,
-    'union': 12,
-    'variable': 13,
-    'gobjectproperty': 13,
-    'constructor': 14,
-    'destructor': 15,
-    'method': 16,
-    'methodtemplate': 16,
-    'function': 17,
-    'functiontemplate': 17
+\t'category': 0,
+\t'namespace': 1,
+\t'templatetypeparameter': 2,
+\t'templatenontypeparameter': 2,
+\t'base': 3,
+\t'implements': 3,
+\t'subclass': 4,
+\t'implementedby': 4,
+\t'typedef': 5,
+\t'class': 6,
+\t'classtemplate': 6,
+\t'gobjectclass': 6,
+\t'gobjectinterface': 7,
+\t'struct': 8,
+\t'structtemplate': 8,
+\t'gobjectboxed': 8,
+\t'enum': 9,
+\t'enumvalue': 10,
+\t'field': 11,
+\t'union': 12,
+\t'variable': 13,
+\t'gobjectproperty': 13,
+\t'constructor': 14,
+\t'destructor': 15,
+\t'method': 16,
+\t'methodtemplate': 16,
+\t'function': 17,
+\t'functiontemplate': 17
   };
 
   Node.render_container_tag = 'div';
 
   function Node(node1) {
-    this.node = node1;
-    if (!this.node) {
-      return;
-    }
-    if (this.node.length === 0) {
-      this.node = null;
-      return;
-    }
-    this.name = this.node.attr('name');
-    this.id = this.node.attr('id');
-    this.ref = this.node.attr('ref');
-    if (this.ref && !this.id) {
-      this.id = this.ref.replace('#', '+');
-    }
-    this.brief = this.node.children('brief').first();
-    this.doc = this.node.children('doc').first();
+\tthis.node = node1;
+\tif (!this.node) {
+\t  return;
+\t}
+\tif (this.node.length === 0) {
+\t  this.node = null;
+\t  return;
+\t}
+\tthis.name = this.node.attr('name');
+\tthis.id = this.node.attr('id');
+\tthis.ref = this.node.attr('ref');
+\tif (this.ref && !this.id) {
+\t  this.id = this.ref.replace('#', '+');
+\t}
+\tthis.brief = this.node.children('brief').first();
+\tthis.doc = this.node.children('doc').first();
   }
 
   Node.prototype.full_name_for_display = function() {
-    return null;
+\treturn null;
   };
 
   Node.prototype.sidebar_name = function() {
-    return this.name;
+\treturn this.name;
   };
 
   Node.render_container = function() {
-    return ['<' + this.render_container_tag + ' class="' + cldoc.html_escape(this.title[1].toLowerCase().replace(/[ ]/g, '_')) + '">', '</' + this.render_container_tag + '>'];
+\treturn ['<' + this.render_container_tag + ' class="' + cldoc.html_escape(this.title[1].toLowerCase().replace(/[ ]/g, '_')) + '">', '</' + this.render_container_tag + '>'];
   };
 
   Node.prototype.render = function() {
-    return null;
+\treturn null;
   };
 
   return Node;
@@ -1068,134 +1068,134 @@ cldoc.Type = (function(superClass) {
   extend(Type, superClass);
 
   function Type(node1) {
-    var a, arg, args, builtincls, e, i, j, len, len1, name, o, result, subtype;
-    this.node = node1;
-    Type.__super__.constructor.call(this, this.node);
-    this.qualifier = this.node.attr('qualifier');
-    this.size = this.node.attr('size');
-    this.transfer_ownership = this.node.attr('transfer-ownership') || 'none';
-    this.allow_none = this.node.attr('allow-none') === 'yes';
-    this.typeparts = [];
-    this.typeparts_text = [];
-    subtype = this.node.children('type');
-    e = cldoc.html_escape;
-    if (subtype.length > 0) {
-      this.subtype = this.append_type(subtype);
-    }
-    if (this.node.attr('class') === 'function') {
-      this.typeparts.push('<span class="function-type">');
-      this.typeparts_text.push('');
-      result = this.node.children('result').first();
-      args = this.node.children('arguments').first().children('type');
-      this.result = this.append_type($(result));
-      this.args = [];
-      this.typeparts.push('<span class="function-qualified">');
-      this.typeparts_text.push('');
-      this.append_plain_part('(');
-      this.append_qualifier();
-      this.append_plain_part(')');
-      this.typeparts.push('</span><span class="function-arguments">');
-      this.typeparts_text.push('');
-      this.append_plain_part('(');
-      for (i = j = 0, len = args.length; j < len; i = ++j) {
-        arg = args[i];
-        if (i !== 0) {
-          this.append_plain_part(', ');
-        }
-        this.args.push(this.append_type($(arg)));
-      }
-      this.append_plain_part(')');
-      this.typeparts.push('</span></span>');
-      this.typeparts_text.push('');
-    } else if (this.node.attr('class') === 'template') {
-      this.typeparts.push('<span class="template-type">');
-      this.typeparts_text.push('');
-      if (this.ref) {
-        a = cldoc.Page.make_link(this.ref, this.name);
-        name = '<span class="name">' + a + '</span>';
-      } else {
-        name = '<span class="name">' + e(this.name) + '</span>';
-      }
-      this.typeparts.push(name);
-      this.typeparts_text.push(this.name);
-      this.typeparts.push('<span class="template-arguments">');
-      this.typeparts_text.push('');
-      this.append_plain_part('<');
-      args = this.node.children('template-arguments').first().children('type');
-      this.args = [];
-      for (i = o = 0, len1 = args.length; o < len1; i = ++o) {
-        arg = args[i];
-        if (i !== 0) {
-          this.append_plain_part(', ');
-        }
-        this.args.push(this.append_type($(arg)));
-      }
-      this.append_plain_part('>');
-      this.typeparts.push('</span></span>');
-      this.typeparts_text.push('');
-    } else {
-      if (this.name) {
-        if (this.node.attr('builtin')) {
-          builtincls = 'builtin';
-        } else {
-          builtincls = '';
-        }
-        if (this.ref) {
-          a = cldoc.Page.make_link(this.ref, this.name);
-          name = '<span class="name ' + builtincls + '">' + a + '</span>';
-        } else {
-          name = '<span class="name ' + builtincls + '">' + e(this.name) + '</span>';
-        }
-        this.typeparts.push(name);
-        this.typeparts_text.push(this.name);
-      }
-      this.append_qualifier();
-    }
-    if (this.size) {
-      this.typeparts.push('<span class="array_size">' + '[' + this.size + ']' + '</span>');
-      this.typeparts_text.push('[' + this.size + ']');
-    }
+\tvar a, arg, args, builtincls, e, i, j, len, len1, name, o, result, subtype;
+\tthis.node = node1;
+\tType.__super__.constructor.call(this, this.node);
+\tthis.qualifier = this.node.attr('qualifier');
+\tthis.size = this.node.attr('size');
+\tthis.transfer_ownership = this.node.attr('transfer-ownership') || 'none';
+\tthis.allow_none = this.node.attr('allow-none') === 'yes';
+\tthis.typeparts = [];
+\tthis.typeparts_text = [];
+\tsubtype = this.node.children('type');
+\te = cldoc.html_escape;
+\tif (subtype.length > 0) {
+\t  this.subtype = this.append_type(subtype);
+\t}
+\tif (this.node.attr('class') === 'function') {
+\t  this.typeparts.push('<span class="function-type">');
+\t  this.typeparts_text.push('');
+\t  result = this.node.children('result').first();
+\t  args = this.node.children('arguments').first().children('type');
+\t  this.result = this.append_type($(result));
+\t  this.args = [];
+\t  this.typeparts.push('<span class="function-qualified">');
+\t  this.typeparts_text.push('');
+\t  this.append_plain_part('(');
+\t  this.append_qualifier();
+\t  this.append_plain_part(')');
+\t  this.typeparts.push('</span><span class="function-arguments">');
+\t  this.typeparts_text.push('');
+\t  this.append_plain_part('(');
+\t  for (i = j = 0, len = args.length; j < len; i = ++j) {
+\t\targ = args[i];
+\t\tif (i !== 0) {
+\t\t  this.append_plain_part(', ');
+\t\t}
+\t\tthis.args.push(this.append_type($(arg)));
+\t  }
+\t  this.append_plain_part(')');
+\t  this.typeparts.push('</span></span>');
+\t  this.typeparts_text.push('');
+\t} else if (this.node.attr('class') === 'template') {
+\t  this.typeparts.push('<span class="template-type">');
+\t  this.typeparts_text.push('');
+\t  if (this.ref) {
+\t\ta = cldoc.Page.make_link(this.ref, this.name);
+\t\tname = '<span class="name">' + a + '</span>';
+\t  } else {
+\t\tname = '<span class="name">' + e(this.name) + '</span>';
+\t  }
+\t  this.typeparts.push(name);
+\t  this.typeparts_text.push(this.name);
+\t  this.typeparts.push('<span class="template-arguments">');
+\t  this.typeparts_text.push('');
+\t  this.append_plain_part('<');
+\t  args = this.node.children('template-arguments').first().children('type');
+\t  this.args = [];
+\t  for (i = o = 0, len1 = args.length; o < len1; i = ++o) {
+\t\targ = args[i];
+\t\tif (i !== 0) {
+\t\t  this.append_plain_part(', ');
+\t\t}
+\t\tthis.args.push(this.append_type($(arg)));
+\t  }
+\t  this.append_plain_part('>');
+\t  this.typeparts.push('</span></span>');
+\t  this.typeparts_text.push('');
+\t} else {
+\t  if (this.name) {
+\t\tif (this.node.attr('builtin')) {
+\t\t  builtincls = 'builtin';
+\t\t} else {
+\t\t  builtincls = '';
+\t\t}
+\t\tif (this.ref) {
+\t\t  a = cldoc.Page.make_link(this.ref, this.name);
+\t\t  name = '<span class="name ' + builtincls + '">' + a + '</span>';
+\t\t} else {
+\t\t  name = '<span class="name ' + builtincls + '">' + e(this.name) + '</span>';
+\t\t}
+\t\tthis.typeparts.push(name);
+\t\tthis.typeparts_text.push(this.name);
+\t  }
+\t  this.append_qualifier();
+\t}
+\tif (this.size) {
+\t  this.typeparts.push('<span class="array_size">' + '[' + this.size + ']' + '</span>');
+\t  this.typeparts_text.push('[' + this.size + ']');
+\t}
   }
 
   Type.prototype.as_text = function() {
-    return this.typeparts_text.join('');
+\treturn this.typeparts_text.join('');
   };
 
   Type.prototype.render = function() {
-    var item, j, len, ref2, ret;
-    ret = '<span class="type">';
-    ref2 = this.typeparts;
-    for (j = 0, len = ref2.length; j < len; j++) {
-      item = ref2[j];
-      ret += item;
-    }
-    return ret;
+\tvar item, j, len, ref2, ret;
+\tret = '<span class="type">';
+\tref2 = this.typeparts;
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  item = ref2[j];
+\t  ret += item;
+\t}
+\treturn ret;
   };
 
   Type.prototype.append_type = function(type) {
-    type = new Type(type);
-    this.typeparts.push('<span class="sub-type">');
-    this.typeparts_text.push('');
-    this.typeparts = this.typeparts.concat(type.typeparts);
-    this.typeparts_text = this.typeparts_text.concat(type.typeparts_text);
-    this.typeparts.push('</span>');
-    this.typeparts_text.push('');
-    return type;
+\ttype = new Type(type);
+\tthis.typeparts.push('<span class="sub-type">');
+\tthis.typeparts_text.push('');
+\tthis.typeparts = this.typeparts.concat(type.typeparts);
+\tthis.typeparts_text = this.typeparts_text.concat(type.typeparts_text);
+\tthis.typeparts.push('</span>');
+\tthis.typeparts_text.push('');
+\treturn type;
   };
 
   Type.prototype.append_plain_part = function(text) {
-    this.typeparts.push('<span class="plain">' + cldoc.html_escape(text) + '</span>');
-    return this.typeparts_text.push(text);
+\tthis.typeparts.push('<span class="plain">' + cldoc.html_escape(text) + '</span>');
+\treturn this.typeparts_text.push(text);
   };
 
   Type.prototype.append_qualifier = function() {
-    var q, qc;
-    if (this.qualifier) {
-      qc = cldoc.html_escape(this.qualifier).replace(/const/g, '<span class="keyword">const</span>');
-      q = '<span class="qualifier"> ' + qc + '</span>';
-      this.typeparts.push(q);
-      return this.typeparts_text.push(this.qualifier);
-    }
+\tvar q, qc;
+\tif (this.qualifier) {
+\t  qc = cldoc.html_escape(this.qualifier).replace(/const/g, '<span class="keyword">const</span>');
+\t  q = '<span class="qualifier"> ' + qc + '</span>';
+\t  this.typeparts.push(q);
+\t  return this.typeparts_text.push(this.qualifier);
+\t}
   };
 
   return Type;
@@ -1210,126 +1210,126 @@ cldoc.Doc = (function(superClass) {
   Doc.magic_separator = '%~@@~%';
 
   Doc.init = function() {
-    var origproto;
-    origproto = marked.InlineLexer.prototype.outputLink;
-    return marked.InlineLexer.prototype.outputLink = function(cap, link) {
-      var orighref, ret;
-      orighref = link.href;
-      if (link.href.match(/^[a-z]+:/) === null && link.href[0] !== '/') {
-        link.href = cldoc.host + '/' + link.href;
-      }
-      ret = origproto.call(this, cap, link);
-      link.href = orighref;
-      return ret;
-    };
+\tvar origproto;
+\torigproto = marked.InlineLexer.prototype.outputLink;
+\treturn marked.InlineLexer.prototype.outputLink = function(cap, link) {
+\t  var orighref, ret;
+\t  orighref = link.href;
+\t  if (link.href.match(/^[a-z]+:/) === null && link.href[0] !== '/') {
+\t\tlink.href = cldoc.host + '/' + link.href;
+\t  }
+\t  ret = origproto.call(this, cap, link);
+\t  link.href = orighref;
+\t  return ret;
+\t};
   };
 
   function Doc(node1) {
-    this.node = node1;
-    Doc.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tDoc.__super__.constructor.call(this, this.node);
   }
 
   Doc.either = function(node) {
-    var brief, doc;
-    doc = this.doc(node);
-    if (doc) {
-      return doc;
-    }
-    brief = this.brief(node);
-    if (brief) {
-      return brief;
-    }
-    return '';
+\tvar brief, doc;
+\tdoc = this.doc(node);
+\tif (doc) {
+\t  return doc;
+\t}
+\tbrief = this.brief(node);
+\tif (brief) {
+\t  return brief;
+\t}
+\treturn '';
   };
 
   Doc.brief = function(node) {
-    return new Doc(node.children('brief')).render();
+\treturn new Doc(node.children('brief')).render();
   };
 
   Doc.doc = function(node) {
-    return new Doc(node.children('doc')).render();
+\treturn new Doc(node.children('doc')).render();
   };
 
   Doc.prototype.escape = function(text) {
-    var r;
-    r = /([*_\\`{}#+-.!\[\]])/g;
-    return text.replace(r, function(m) {
-      return "\\" + m;
-    });
+\tvar r;
+\tr = /([*_\\`{}#+-.!\[\]])/g;
+\treturn text.replace(r, function(m) {
+\t  return "\\" + m;
+\t});
   };
 
   Doc.prototype.process_markdown = function(text) {
-    var a, html, i, j, marked_options, parts, ref2, rethtml;
-    marked_options = {
-      highlight: function(code) {
-        return hljs.highlightAuto(code).value;
-      }
-    };
-    marked.setOptions(marked_options);
-    html = marked(text);
-    parts = html.split(Doc.magic_separator);
-    rethtml = '';
-    for (i = j = 0, ref2 = parts.length - 2; j <= ref2; i = j += 3) {
-      a = cldoc.Page.make_link(parts[i + 1], parts[i + 2]);
-      rethtml += parts[i] + a;
-    }
-    return rethtml + parts[parts.length - 1];
+\tvar a, html, i, j, marked_options, parts, ref2, rethtml;
+\tmarked_options = {
+\t  highlight: function(code) {
+\t\treturn hljs.highlightAuto(code).value;
+\t  }
+\t};
+\tmarked.setOptions(marked_options);
+\thtml = marked(text);
+\tparts = html.split(Doc.magic_separator);
+\trethtml = '';
+\tfor (i = j = 0, ref2 = parts.length - 2; j <= ref2; i = j += 3) {
+\t  a = cldoc.Page.make_link(parts[i + 1], parts[i + 2]);
+\t  rethtml += parts[i] + a;
+\t}
+\treturn rethtml + parts[parts.length - 1];
   };
 
   Doc.prototype.process_code = function(code) {
-    var c, e, j, len, ref2, ret, tag;
-    ret = '<pre><code>';
-    e = cldoc.html_escape;
-    ref2 = $(code).contents();
-    for (j = 0, len = ref2.length; j < len; j++) {
-      c = ref2[j];
-      if (c.nodeType === document.ELEMENT_NODE) {
-        tag = c.tagName.toLowerCase();
-        c = $(c);
-        if (tag === 'ref') {
-          ret += cldoc.Page.make_link(c.attr('ref'), c.attr('name'));
-        } else {
-          ret += '<span class="' + e(tag) + '">' + e(c.text()) + '</span>';
-        }
-      } else {
-        ret += e($(c).text());
-      }
-    }
-    return ret + '</code></pre>';
+\tvar c, e, j, len, ref2, ret, tag;
+\tret = '<pre><code>';
+\te = cldoc.html_escape;
+\tref2 = $(code).contents();
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  c = ref2[j];
+\t  if (c.nodeType === document.ELEMENT_NODE) {
+\t\ttag = c.tagName.toLowerCase();
+\t\tc = $(c);
+\t\tif (tag === 'ref') {
+\t\t  ret += cldoc.Page.make_link(c.attr('ref'), c.attr('name'));
+\t\t} else {
+\t\t  ret += '<span class="' + e(tag) + '">' + e(c.text()) + '</span>';
+\t\t}
+\t  } else {
+\t\tret += e($(c).text());
+\t  }
+\t}
+\treturn ret + '</code></pre>';
   };
 
   Doc.prototype.render = function() {
-    var astext, c, contents, e, j, len, msep, ret, tag;
-    if (!this.node) {
-      return '';
-    }
-    e = cldoc.html_escape;
-    ret = '<div class="' + e(cldoc.tag(this.node)[0]) + '">';
-    contents = this.node.contents();
-    astext = '';
-    msep = Doc.magic_separator;
-    for (j = 0, len = contents.length; j < len; j++) {
-      c = contents[j];
-      if (c.nodeType === document.ELEMENT_NODE) {
-        tag = c.tagName.toLowerCase();
-        if (tag === 'ref') {
-          c = $(c);
-          astext += this.escape(msep + c.attr('ref') + msep + c.text() + msep);
-        } else if (tag === 'code') {
-          if (astext) {
-            ret += this.process_markdown(astext);
-            astext = '';
-          }
-          ret += this.process_code(c);
-        }
-      } else {
-        astext += $(c).text();
-      }
-    }
-    if (astext) {
-      ret += this.process_markdown(astext);
-    }
-    return ret + '</div>';
+\tvar astext, c, contents, e, j, len, msep, ret, tag;
+\tif (!this.node) {
+\t  return '';
+\t}
+\te = cldoc.html_escape;
+\tret = '<div class="' + e(cldoc.tag(this.node)[0]) + '">';
+\tcontents = this.node.contents();
+\tastext = '';
+\tmsep = Doc.magic_separator;
+\tfor (j = 0, len = contents.length; j < len; j++) {
+\t  c = contents[j];
+\t  if (c.nodeType === document.ELEMENT_NODE) {
+\t\ttag = c.tagName.toLowerCase();
+\t\tif (tag === 'ref') {
+\t\t  c = $(c);
+\t\t  astext += this.escape(msep + c.attr('ref') + msep + c.text() + msep);
+\t\t} else if (tag === 'code') {
+\t\t  if (astext) {
+\t\t\tret += this.process_markdown(astext);
+\t\t\tastext = '';
+\t\t  }
+\t\t  ret += this.process_code(c);
+\t\t}
+\t  } else {
+\t\tastext += $(c).text();
+\t  }
+\t}
+\tif (astext) {
+\t  ret += this.process_markdown(astext);
+\t}
+\treturn ret + '</div>';
   };
 
   return Doc;
@@ -1344,34 +1344,34 @@ cldoc.Category = (function(superClass) {
   Category.title = ['', 'Categories'];
 
   function Category(node1) {
-    this.node = node1;
-    Category.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tCategory.__super__.constructor.call(this, this.node);
   }
 
   Category.prototype.full_name_for_display = function() {
-    return this.name;
+\treturn this.name;
   };
 
   Category.prototype.render = function() {
-    var a, cat, categories, doc, j, len, ret;
-    ret = '<div class="item">';
-    ret += cldoc.Page.make_link(this.ref, this.name, {
-      'id': this.id
-    });
-    ret += new cldoc.Doc(this.brief).render();
-    categories = this.node.children('category');
-    if (categories.length > 0) {
-      ret += '<table class="category">';
-      for (j = 0, len = categories.length; j < len; j++) {
-        cat = categories[j];
-        cat = $(cat);
-        a = cldoc.Page.make_link(cat.attr('ref'), cat.attr('name'));
-        doc = cldoc.Doc.either(cat);
-        ret += '<tr><td>' + a + '</td><td class="doc">' + doc + '</td></tr>';
-      }
-      ret += '</table>';
-    }
-    return ret;
+\tvar a, cat, categories, doc, j, len, ret;
+\tret = '<div class="item">';
+\tret += cldoc.Page.make_link(this.ref, this.name, {
+\t  'id': this.id
+\t});
+\tret += new cldoc.Doc(this.brief).render();
+\tcategories = this.node.children('category');
+\tif (categories.length > 0) {
+\t  ret += '<table class="category">';
+\t  for (j = 0, len = categories.length; j < len; j++) {
+\t\tcat = categories[j];
+\t\tcat = $(cat);
+\t\ta = cldoc.Page.make_link(cat.attr('ref'), cat.attr('name'));
+\t\tdoc = cldoc.Doc.either(cat);
+\t\tret += '<tr><td>' + a + '</td><td class="doc">' + doc + '</td></tr>';
+\t  }
+\t  ret += '</table>';
+\t}
+\treturn ret;
   };
 
   return Category;
@@ -1386,44 +1386,44 @@ cldoc.Enum = (function(superClass) {
   Enum.title = ['Enum', 'Enumerations'];
 
   function Enum(node1) {
-    this.node = node1;
-    Enum.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tEnum.__super__.constructor.call(this, this.node);
   }
 
   Enum.prototype.render = function() {
-    var e, isprot, j, len, n, ref2, ret, value;
-    e = cldoc.html_escape;
-    isprot = this.node.attr('access') === 'protected';
-    if (isprot) {
-      n = 'protected enum';
-    } else {
-      n = 'enum';
-    }
-    if (this.node.attr('class')) {
-      n += ' class';
-    }
-    if (this.node.attr('typedef')) {
-      n = 'typedef ' + n;
-    }
-    ret = '<div id="' + e(this.id) + '"><span class="keyword">' + e(n) + '</span> ';
-    ret += '<span class="identifier">';
-    if (!cldoc.startswith(this.name, '(anonymous')) {
-      ret += e(this.name);
-    }
-    ret += '</span></div>';
-    ret += cldoc.Doc.either(this.node);
-    ret += '<table>';
-    ref2 = this.node.children('enumvalue');
-    for (j = 0, len = ref2.length; j < len; j++) {
-      value = ref2[j];
-      value = $(value);
-      ret += '<tr id="' + e(value.attr('id')) + '">';
-      ret += '<td class="name identifier">' + e(value.attr('name')) + '</td>';
-      ret += '<td class="value">' + e(value.attr('value')) + '</td>';
-      ret += '<td class="doc">' + cldoc.Doc.either(value) + '</td>';
-      ret += '</tr>';
-    }
-    return ret + '</table>';
+\tvar e, isprot, j, len, n, ref2, ret, value;
+\te = cldoc.html_escape;
+\tisprot = this.node.attr('access') === 'protected';
+\tif (isprot) {
+\t  n = 'protected enum';
+\t} else {
+\t  n = 'enum';
+\t}
+\tif (this.node.attr('class')) {
+\t  n += ' class';
+\t}
+\tif (this.node.attr('typedef')) {
+\t  n = 'typedef ' + n;
+\t}
+\tret = '<div id="' + e(this.id) + '"><span class="keyword">' + e(n) + '</span> ';
+\tret += '<span class="identifier">';
+\tif (!cldoc.startswith(this.name, '(anonymous')) {
+\t  ret += e(this.name);
+\t}
+\tret += '</span></div>';
+\tret += cldoc.Doc.either(this.node);
+\tret += '<table>';
+\tref2 = this.node.children('enumvalue');
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  value = ref2[j];
+\t  value = $(value);
+\t  ret += '<tr id="' + e(value.attr('id')) + '">';
+\t  ret += '<td class="name identifier">' + e(value.attr('name')) + '</td>';
+\t  ret += '<td class="value">' + e(value.attr('value')) + '</td>';
+\t  ret += '<td class="doc">' + cldoc.Doc.either(value) + '</td>';
+\t  ret += '</tr>';
+\t}
+\treturn ret + '</table>';
   };
 
   return Enum;
@@ -1435,77 +1435,77 @@ cldoc.Node.types["enum"] = cldoc.Enum;
 cldoc.Templated = function(base) {
   var MixedIn;
   MixedIn = (function(superClass) {
-    extend(MixedIn, superClass);
+\textend(MixedIn, superClass);
 
-    function MixedIn() {
-      return MixedIn.__super__.constructor.apply(this, arguments);
-    }
+\tfunction MixedIn() {
+\t  return MixedIn.__super__.constructor.apply(this, arguments);
+\t}
 
-    MixedIn.prototype.template_parameter_name = function(param) {
-      var def, name, ret, tp;
-      param = $(param);
-      name = param.attr('name');
-      def = param.attr('default');
-      tp = param.children('type');
-      ret = '';
-      if (tp.length > 0) {
-        ret += (new cldoc.Type(tp)).as_text() + ' ';
-      }
-      ret += name;
-      if (def) {
-        ret += ' = ' + def;
-      }
-      return ret;
-    };
+\tMixedIn.prototype.template_parameter_name = function(param) {
+\t  var def, name, ret, tp;
+\t  param = $(param);
+\t  name = param.attr('name');
+\t  def = param.attr('default');
+\t  tp = param.children('type');
+\t  ret = '';
+\t  if (tp.length > 0) {
+\t\tret += (new cldoc.Type(tp)).as_text() + ' ';
+\t  }
+\t  ret += name;
+\t  if (def) {
+\t\tret += ' = ' + def;
+\t  }
+\t  return ret;
+\t};
 
-    MixedIn.prototype.templated_name = function() {
-      var name, x;
-      name = this.name;
-      name += '<';
-      name += ((function() {
-        var j, len, ref2, results1;
-        ref2 = this.node.children('templatetypeparameter, templatenontypeparameter');
-        results1 = [];
-        for (j = 0, len = ref2.length; j < len; j++) {
-          x = ref2[j];
-          results1.push(this.template_parameter_name(x));
-        }
-        return results1;
-      }).call(this)).join(', ');
-      name += '>';
-      return name;
-    };
+\tMixedIn.prototype.templated_name = function() {
+\t  var name, x;
+\t  name = this.name;
+\t  name += '<';
+\t  name += ((function() {
+\t\tvar j, len, ref2, results1;
+\t\tref2 = this.node.children('templatetypeparameter, templatenontypeparameter');
+\t\tresults1 = [];
+\t\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t\t  x = ref2[j];
+\t\t  results1.push(this.template_parameter_name(x));
+\t\t}
+\t\treturn results1;
+\t  }).call(this)).join(', ');
+\t  name += '>';
+\t  return name;
+\t};
 
-    MixedIn.prototype.identifier_for_display = function() {
-      return this.templated_name();
-    };
+\tMixedIn.prototype.identifier_for_display = function() {
+\t  return this.templated_name();
+\t};
 
-    MixedIn.prototype.full_name_for_display = function() {
-      return this.templated_name();
-    };
+\tMixedIn.prototype.full_name_for_display = function() {
+\t  return this.templated_name();
+\t};
 
-    MixedIn.prototype.sidebar_name = function() {
-      return this.identifier_for_display();
-    };
+\tMixedIn.prototype.sidebar_name = function() {
+\t  return this.identifier_for_display();
+\t};
 
-    MixedIn.prototype.render_arguments = function() {
-      var j, len, ret, tt, x;
-      ret = '<table class="function-template-parameters">';
-      tt = this.node.children('templatetypeparameter, templatenontypeparameter');
-      for (j = 0, len = tt.length; j < len; j++) {
-        x = tt[j];
-        x = $(x);
-        ret += '<tr>';
-        ret += '<td>' + x.attr('name') + '</td>';
-        ret += '<td>' + cldoc.Doc.either(x) + '</td>';
-        ret += '</tr>';
-      }
-      ret += '</table>';
-      ret += MixedIn.__super__.render_arguments.apply(this, arguments);
-      return ret;
-    };
+\tMixedIn.prototype.render_arguments = function() {
+\t  var j, len, ret, tt, x;
+\t  ret = '<table class="function-template-parameters">';
+\t  tt = this.node.children('templatetypeparameter, templatenontypeparameter');
+\t  for (j = 0, len = tt.length; j < len; j++) {
+\t\tx = tt[j];
+\t\tx = $(x);
+\t\tret += '<tr>';
+\t\tret += '<td>' + x.attr('name') + '</td>';
+\t\tret += '<td>' + cldoc.Doc.either(x) + '</td>';
+\t\tret += '</tr>';
+\t  }
+\t  ret += '</table>';
+\t  ret += MixedIn.__super__.render_arguments.apply(this, arguments);
+\t  return ret;
+\t};
 
-    return MixedIn;
+\treturn MixedIn;
 
   })(base);
   return MixedIn;
@@ -1519,95 +1519,95 @@ cldoc.Struct = (function(superClass) {
   Struct.render_container_tag = 'table';
 
   function Struct(node1) {
-    this.node = node1;
-    Struct.__super__.constructor.call(this, this.node);
-    if (this.node.attr('typedef')) {
-      this.keyword = 'typedef struct';
-    } else {
-      this.keyword = 'struct';
-    }
+\tthis.node = node1;
+\tStruct.__super__.constructor.call(this, this.node);
+\tif (this.node.attr('typedef')) {
+\t  this.keyword = 'typedef struct';
+\t} else {
+\t  this.keyword = 'struct';
+\t}
   }
 
   Struct.prototype.render = function() {
-    if (this.ref || this.node.children('field, method, function, methodtemplate, functiontemplate').length === 0) {
-      return this.render_short();
-    } else {
-      return this.render_whole();
-    }
+\tif (this.ref || this.node.children('field, method, function, methodtemplate, functiontemplate').length === 0) {
+\t  return this.render_short();
+\t} else {
+\t  return this.render_whole();
+\t}
   };
 
   Struct.prototype.identifier_for_display = function() {
-    return this.name;
+\treturn this.name;
   };
 
   Struct.prototype.render_short = function() {
-    var e, id, ret;
-    e = cldoc.html_escape;
-    ret = '<tr class="short">';
-    if (this.ref) {
-      id = cldoc.Page.make_link(this.ref, this.identifier_for_display());
-    } else {
-      id = '<span class="identifier">' + e(this.identifier_for_display()) + '</span>';
-    }
-    ret += '<td>' + id + '</td>';
-    ret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar e, id, ret;
+\te = cldoc.html_escape;
+\tret = '<tr class="short">';
+\tif (this.ref) {
+\t  id = cldoc.Page.make_link(this.ref, this.identifier_for_display());
+\t} else {
+\t  id = '<span class="identifier">' + e(this.identifier_for_display()) + '</span>';
+\t}
+\tret += '<td>' + id + '</td>';
+\tret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   Struct.prototype.render_whole = function() {
-    var e, id, identifier, isprot, k, ret;
-    e = cldoc.html_escape;
-    ret = '<tr class="full"><td colspan="2"><div class="item">';
-    identifier = this.identifier_for_display();
-    id = '<span class="identifier">' + e(identifier) + '</span>';
-    k = '<span class="keyword">';
-    isprot = this.node.attr('access') === 'protected';
-    if (isprot) {
-      k += 'protected ';
-    }
-    k += e(this.keyword) + '</span>';
-    if (this.node.attr('anonymous') !== 'yes') {
-      k += ' ' + id;
-    }
-    ret += '<div id="' + e(identifier) + '">' + k + '</div>';
-    ret += cldoc.Doc.either(this.node);
-    ret += this.render_fields();
-    ret += this.render_variables();
-    return ret + '</div></td></tr>';
+\tvar e, id, identifier, isprot, k, ret;
+\te = cldoc.html_escape;
+\tret = '<tr class="full"><td colspan="2"><div class="item">';
+\tidentifier = this.identifier_for_display();
+\tid = '<span class="identifier">' + e(identifier) + '</span>';
+\tk = '<span class="keyword">';
+\tisprot = this.node.attr('access') === 'protected';
+\tif (isprot) {
+\t  k += 'protected ';
+\t}
+\tk += e(this.keyword) + '</span>';
+\tif (this.node.attr('anonymous') !== 'yes') {
+\t  k += ' ' + id;
+\t}
+\tret += '<div id="' + e(identifier) + '">' + k + '</div>';
+\tret += cldoc.Doc.either(this.node);
+\tret += this.render_fields();
+\tret += this.render_variables();
+\treturn ret + '</div></td></tr>';
   };
 
   Struct.prototype.render_variables = function() {
-    var container, itemsc, j, len, variable, variables;
-    variables = this.node.children('variable');
-    if (variables.length === 0) {
-      return '';
-    }
-    container = cldoc.Variable.render_container();
-    itemsc = '';
-    for (j = 0, len = variables.length; j < len; j++) {
-      variable = variables[j];
-      itemsc += new cldoc.Variable($(variable)).render();
-    }
-    return container[0] + itemsc + container[1];
+\tvar container, itemsc, j, len, variable, variables;
+\tvariables = this.node.children('variable');
+\tif (variables.length === 0) {
+\t  return '';
+\t}
+\tcontainer = cldoc.Variable.render_container();
+\titemsc = '';
+\tfor (j = 0, len = variables.length; j < len; j++) {
+\t  variable = variables[j];
+\t  itemsc += new cldoc.Variable($(variable)).render();
+\t}
+\treturn container[0] + itemsc + container[1];
   };
 
   Struct.prototype.render_fields = function() {
-    var container, field, fields, itemsc, j, len, tp;
-    fields = this.node.children('field,union');
-    if (fields.length === 0) {
-      return '';
-    }
-    container = cldoc.Field.render_container();
-    itemsc = '';
-    for (j = 0, len = fields.length; j < len; j++) {
-      field = fields[j];
-      field = $(field);
-      tp = cldoc.Page.node_type(field);
-      if (tp) {
-        itemsc += new tp(field).render();
-      }
-    }
-    return container[0] + itemsc + container[1];
+\tvar container, field, fields, itemsc, j, len, tp;
+\tfields = this.node.children('field,union');
+\tif (fields.length === 0) {
+\t  return '';
+\t}
+\tcontainer = cldoc.Field.render_container();
+\titemsc = '';
+\tfor (j = 0, len = fields.length; j < len; j++) {
+\t  field = fields[j];
+\t  field = $(field);
+\t  tp = cldoc.Page.node_type(field);
+\t  if (tp) {
+\t\titemsc += new tp(field).render();
+\t  }
+\t}
+\treturn container[0] + itemsc + container[1];
   };
 
   return Struct;
@@ -1620,7 +1620,7 @@ cldoc.StructTemplate = (function(superClass) {
   extend(StructTemplate, superClass);
 
   function StructTemplate() {
-    return StructTemplate.__super__.constructor.apply(this, arguments);
+\treturn StructTemplate.__super__.constructor.apply(this, arguments);
   }
 
   return StructTemplate;
@@ -1635,9 +1635,9 @@ cldoc.Class = (function(superClass) {
   Class.title = ['Class', 'Classes'];
 
   function Class(node1) {
-    this.node = node1;
-    Class.__super__.constructor.call(this, this.node);
-    this.keyword = 'class';
+\tthis.node = node1;
+\tClass.__super__.constructor.call(this, this.node);
+\tthis.keyword = 'class';
   }
 
   return Class;
@@ -1650,7 +1650,7 @@ cldoc.ClassTemplate = (function(superClass) {
   extend(ClassTemplate, superClass);
 
   function ClassTemplate() {
-    return ClassTemplate.__super__.constructor.apply(this, arguments);
+\treturn ClassTemplate.__super__.constructor.apply(this, arguments);
   }
 
   return ClassTemplate;
@@ -1665,32 +1665,32 @@ cldoc.Namespace = (function(superClass) {
   Namespace.title = ['Namespace', 'Namespaces'];
 
   function Namespace(node1) {
-    this.node = node1;
-    Namespace.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tNamespace.__super__.constructor.call(this, this.node);
   }
 
   Namespace.prototype.render = function() {
-    var a, classes, cls, j, len, ret;
-    ret = '<div class="item">';
-    ret += cldoc.Page.make_link(this.ref, this.name, {
-      'id': this.id
-    });
-    ret += new cldoc.Doc(this.brief).render();
-    classes = this.node.children('class,struct');
-    if (classes.length > 0) {
-      ret += '<table class="namespace">';
-      for (j = 0, len = classes.length; j < len; j++) {
-        cls = classes[j];
-        cls = $(cls);
-        ret += '<tr>';
-        a = cldoc.Page.make_link(cls.attr('ref'), cls.attr('name'));
-        ret += '<td>' + a + '</td>';
-        ret += '<td class="doc">' + cldoc.Doc.either(cls) + '</td>';
-        ret += '</tr>';
-      }
-      ret += '</table>';
-    }
-    return ret;
+\tvar a, classes, cls, j, len, ret;
+\tret = '<div class="item">';
+\tret += cldoc.Page.make_link(this.ref, this.name, {
+\t  'id': this.id
+\t});
+\tret += new cldoc.Doc(this.brief).render();
+\tclasses = this.node.children('class,struct');
+\tif (classes.length > 0) {
+\t  ret += '<table class="namespace">';
+\t  for (j = 0, len = classes.length; j < len; j++) {
+\t\tcls = classes[j];
+\t\tcls = $(cls);
+\t\tret += '<tr>';
+\t\ta = cldoc.Page.make_link(cls.attr('ref'), cls.attr('name'));
+\t\tret += '<td>' + a + '</td>';
+\t\tret += '<td class="doc">' + cldoc.Doc.either(cls) + '</td>';
+\t\tret += '</tr>';
+\t  }
+\t  ret += '</table>';
+\t}
+\treturn ret;
   };
 
   return Namespace;
@@ -1707,21 +1707,21 @@ cldoc.Typedef = (function(superClass) {
   Typedef.render_container_tag = 'table';
 
   function Typedef(node1) {
-    this.node = node1;
-    Typedef.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tTypedef.__super__.constructor.call(this, this.node);
   }
 
   Typedef.prototype.render = function() {
-    var e, ret;
-    e = cldoc.html_escape;
-    ret = '<tr class="typedef" id="' + e(this.id) + '">';
-    ret += '<td class="typedef_name identifier">' + e(this.node.attr('name')) + '</td>';
-    ret += '<td class="typedef_decl keyword">type</td>';
-    ret += '<td class="typedef_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
-    ret += '</tr>';
-    ret += '<tr class="doc">';
-    ret += '<td colspan="3">' + cldoc.Doc.either(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar e, ret;
+\te = cldoc.html_escape;
+\tret = '<tr class="typedef" id="' + e(this.id) + '">';
+\tret += '<td class="typedef_name identifier">' + e(this.node.attr('name')) + '</td>';
+\tret += '<td class="typedef_decl keyword">type</td>';
+\tret += '<td class="typedef_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
+\tret += '</tr>';
+\tret += '<tr class="doc">';
+\tret += '<td colspan="3">' + cldoc.Doc.either(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return Typedef;
@@ -1738,18 +1738,18 @@ cldoc.Variable = (function(superClass) {
   Variable.render_container_tag = 'table';
 
   function Variable(node1) {
-    this.node = node1;
-    Variable.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tVariable.__super__.constructor.call(this, this.node);
   }
 
   Variable.prototype.render = function() {
-    var e, ret;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + e(this.node.attr('id')) + '">';
-    ret += '<td class="variable_name identifier">' + e(this.node.attr('name')) + '</td>';
-    ret += '<td class="variable_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
-    ret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar e, ret;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + e(this.node.attr('id')) + '">';
+\tret += '<td class="variable_name identifier">' + e(this.node.attr('name')) + '</td>';
+\tret += '<td class="variable_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
+\tret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return Variable;
@@ -1764,125 +1764,125 @@ cldoc.Function = (function(superClass) {
   Function.title = ['Function', 'Functions'];
 
   function Function(node1) {
-    this.node = node1;
-    Function.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tFunction.__super__.constructor.call(this, this.node);
   }
 
   Function.prototype.identifier_for_display = function() {
-    return this.name;
+\treturn this.name;
   };
 
   Function.prototype.render_arguments = function() {
-    var arg, args, argtype, e, i, j, ref2, ret, retu, returntype;
-    args = this.node.children('argument');
-    ret = '<table class="arguments">';
-    retu = this.node.children('return');
-    returntype = null;
-    if (retu.length > 0) {
-      returntype = new cldoc.Type(retu.children('type'));
-    }
-    e = cldoc.html_escape;
-    for (i = j = 0, ref2 = args.length - 1; j <= ref2; i = j += 1) {
-      arg = $(args[i]);
-      argtype = new cldoc.Type(arg.children('type'));
-      ret += '<tr id="' + e(arg.attr('id')) + '">';
-      ret += '<td>' + e(arg.attr('name')) + '</td>';
-      ret += '<td>' + cldoc.Doc.either(arg);
-      if (argtype.allow_none) {
-        ret += '<span class="annotation">(may be <code>NULL</code>)</span>';
-      }
-      ret += '</td></tr>';
-    }
-    if (returntype && returntype.node.attr('name') !== 'void') {
-      ret += '<tr class="return">';
-      ret += '<td class="keyword">return</td>';
-      ret += '<td>' + cldoc.Doc.either(retu);
-      if (returntype.transfer_ownership === 'full') {
-        ret += '<span class="annotation">(owned by caller)</span>';
-      } else if (returntype.transfer_ownership === 'container') {
-        ret += '<span class="annotation">(container owned by caller)</span>';
-      }
-      ret += '</tr>';
-    }
-    ret += '</table>';
-    return ret;
+\tvar arg, args, argtype, e, i, j, ref2, ret, retu, returntype;
+\targs = this.node.children('argument');
+\tret = '<table class="arguments">';
+\tretu = this.node.children('return');
+\treturntype = null;
+\tif (retu.length > 0) {
+\t  returntype = new cldoc.Type(retu.children('type'));
+\t}
+\te = cldoc.html_escape;
+\tfor (i = j = 0, ref2 = args.length - 1; j <= ref2; i = j += 1) {
+\t  arg = $(args[i]);
+\t  argtype = new cldoc.Type(arg.children('type'));
+\t  ret += '<tr id="' + e(arg.attr('id')) + '">';
+\t  ret += '<td>' + e(arg.attr('name')) + '</td>';
+\t  ret += '<td>' + cldoc.Doc.either(arg);
+\t  if (argtype.allow_none) {
+\t\tret += '<span class="annotation">(may be <code>NULL</code>)</span>';
+\t  }
+\t  ret += '</td></tr>';
+\t}
+\tif (returntype && returntype.node.attr('name') !== 'void') {
+\t  ret += '<tr class="return">';
+\t  ret += '<td class="keyword">return</td>';
+\t  ret += '<td>' + cldoc.Doc.either(retu);
+\t  if (returntype.transfer_ownership === 'full') {
+\t\tret += '<span class="annotation">(owned by caller)</span>';
+\t  } else if (returntype.transfer_ownership === 'container') {
+\t\tret += '<span class="annotation">(container owned by caller)</span>';
+\t  }
+\t  ret += '</tr>';
+\t}
+\tret += '</table>';
+\treturn ret;
   };
 
   Function.prototype.render = function() {
-    var arg, args, argtype, e, i, isover, isprot, isstat, isvirt, j, name, o, ov, override, ref2, ref3, ret, retu, returntype;
-    e = cldoc.html_escape;
-    ret = '<div class="function">';
-    ret += '<div class="declaration" id="' + e(this.id) + '">';
-    isvirt = this.node.attr('virtual');
-    isprot = this.node.attr('access') === 'protected';
-    isstat = this.node.attr('static');
-    if (isvirt || isprot || isstat) {
-      ret += '<ul class="specifiers">';
-      if (isstat) {
-        ret += '<li class="static">static</li>';
-      }
-      if (isprot) {
-        ret += '<li class="protected">protected</li>';
-      }
-      if (isvirt) {
-        isover = this.node.attr('override');
-        if (isover) {
-          ret += '<li class="override">override</li>';
-        } else {
-          ret += '<li class="virtual">virtual</li>';
-        }
-        if (this.node.attr('abstract')) {
-          ret += '<li class="abstract">abstract</li>';
-        }
-      }
-      ret += '</ul>';
-    }
-    retu = this.node.children('return');
-    returntype = null;
-    if (retu.length > 0) {
-      returntype = new cldoc.Type(retu.children('type'));
-      ret += '<div class="return_type">' + returntype.render() + '</div>';
-    }
-    ret += '<table class="declaration">';
-    ret += '<tr><td class="identifier">' + e(this.identifier_for_display()) + '</td>';
-    ret += '<td class="open_paren">(</td>';
-    args = this.node.children('argument');
-    for (i = j = 0, ref2 = args.length - 1; j <= ref2; i = j += 1) {
-      if (i !== 0) {
-        ret += '</tr><tr><td colspan="2"></td>';
-      }
-      arg = $(args[i]);
-      argtype = new cldoc.Type(arg.children('type'));
-      ret += '<td class="argument_type">' + argtype.render() + '</td>';
-      name = arg.attr('name');
-      if (i !== args.length - 1) {
-        name += ',';
-      }
-      ret += '<td class="argument_name">' + e(name) + '</td>';
-    }
-    if (args.length === 0) {
-      ret += '<td colspan="2"></td>';
-    }
-    ret += '<td class="close_paren">)</td></tr></table></div>';
-    ret += cldoc.Doc.either(this.node);
-    ret += this.render_arguments();
-    override = this.node.children('override');
-    if (override.length > 0) {
-      ret += '<div class="overrides"><span class="title">Overrides: </span>';
-      for (i = o = 0, ref3 = override.length - 1; 0 <= ref3 ? o <= ref3 : o >= ref3; i = 0 <= ref3 ? ++o : --o) {
-        ov = $(override[i]);
-        if (i !== 0) {
-          if (i === override.length - 1) {
-            ret += ' and ';
-          } else {
-            ret += ', ';
-          }
-        }
-        ret += cldoc.Page.make_link(ov.attr('ref'), ov.attr('name'));
-      }
-      ret += '</div>';
-    }
-    return ret + '</div>';
+\tvar arg, args, argtype, e, i, isover, isprot, isstat, isvirt, j, name, o, ov, override, ref2, ref3, ret, retu, returntype;
+\te = cldoc.html_escape;
+\tret = '<div class="function">';
+\tret += '<div class="declaration" id="' + e(this.id) + '">';
+\tisvirt = this.node.attr('virtual');
+\tisprot = this.node.attr('access') === 'protected';
+\tisstat = this.node.attr('static');
+\tif (isvirt || isprot || isstat) {
+\t  ret += '<ul class="specifiers">';
+\t  if (isstat) {
+\t\tret += '<li class="static">static</li>';
+\t  }
+\t  if (isprot) {
+\t\tret += '<li class="protected">protected</li>';
+\t  }
+\t  if (isvirt) {
+\t\tisover = this.node.attr('override');
+\t\tif (isover) {
+\t\t  ret += '<li class="override">override</li>';
+\t\t} else {
+\t\t  ret += '<li class="virtual">virtual</li>';
+\t\t}
+\t\tif (this.node.attr('abstract')) {
+\t\t  ret += '<li class="abstract">abstract</li>';
+\t\t}
+\t  }
+\t  ret += '</ul>';
+\t}
+\tretu = this.node.children('return');
+\treturntype = null;
+\tif (retu.length > 0) {
+\t  returntype = new cldoc.Type(retu.children('type'));
+\t  ret += '<div class="return_type">' + returntype.render() + '</div>';
+\t}
+\tret += '<table class="declaration">';
+\tret += '<tr><td class="identifier">' + e(this.identifier_for_display()) + '</td>';
+\tret += '<td class="open_paren">(</td>';
+\targs = this.node.children('argument');
+\tfor (i = j = 0, ref2 = args.length - 1; j <= ref2; i = j += 1) {
+\t  if (i !== 0) {
+\t\tret += '</tr><tr><td colspan="2"></td>';
+\t  }
+\t  arg = $(args[i]);
+\t  argtype = new cldoc.Type(arg.children('type'));
+\t  ret += '<td class="argument_type">' + argtype.render() + '</td>';
+\t  name = arg.attr('name');
+\t  if (i !== args.length - 1) {
+\t\tname += ',';
+\t  }
+\t  ret += '<td class="argument_name">' + e(name) + '</td>';
+\t}
+\tif (args.length === 0) {
+\t  ret += '<td colspan="2"></td>';
+\t}
+\tret += '<td class="close_paren">)</td></tr></table></div>';
+\tret += cldoc.Doc.either(this.node);
+\tret += this.render_arguments();
+\toverride = this.node.children('override');
+\tif (override.length > 0) {
+\t  ret += '<div class="overrides"><span class="title">Overrides: </span>';
+\t  for (i = o = 0, ref3 = override.length - 1; 0 <= ref3 ? o <= ref3 : o >= ref3; i = 0 <= ref3 ? ++o : --o) {
+\t\tov = $(override[i]);
+\t\tif (i !== 0) {
+\t\t  if (i === override.length - 1) {
+\t\t\tret += ' and ';
+\t\t  } else {
+\t\t\tret += ', ';
+\t\t  }
+\t\t}
+\t\tret += cldoc.Page.make_link(ov.attr('ref'), ov.attr('name'));
+\t  }
+\t  ret += '</div>';
+\t}
+\treturn ret + '</div>';
   };
 
   return Function;
@@ -1895,7 +1895,7 @@ cldoc.FunctionTemplate = (function(superClass) {
   extend(FunctionTemplate, superClass);
 
   function FunctionTemplate() {
-    return FunctionTemplate.__super__.constructor.apply(this, arguments);
+\treturn FunctionTemplate.__super__.constructor.apply(this, arguments);
   }
 
   return FunctionTemplate;
@@ -1912,18 +1912,18 @@ cldoc.Field = (function(superClass) {
   Field.render_container_tag = 'table';
 
   function Field(node1) {
-    this.node = node1;
-    Field.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tField.__super__.constructor.call(this, this.node);
   }
 
   Field.prototype.render = function() {
-    var e, ret;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + e(this.node.attr('id')) + '">';
-    ret += '<td class="field_name identifier">' + e(this.node.attr('name')) + '</td>';
-    ret += '<td class="field_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
-    ret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar e, ret;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + e(this.node.attr('id')) + '">';
+\tret += '<td class="field_name identifier">' + e(this.node.attr('name')) + '</td>';
+\tret += '<td class="field_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
+\tret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return Field;
@@ -1938,8 +1938,8 @@ cldoc.Method = (function(superClass) {
   Method.title = ['Member Function', 'Member Functions'];
 
   function Method(node1) {
-    this.node = node1;
-    Method.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tMethod.__super__.constructor.call(this, this.node);
   }
 
   return Method;
@@ -1952,7 +1952,7 @@ cldoc.MethodTemplate = (function(superClass) {
   extend(MethodTemplate, superClass);
 
   function MethodTemplate() {
-    return MethodTemplate.__super__.constructor.apply(this, arguments);
+\treturn MethodTemplate.__super__.constructor.apply(this, arguments);
   }
 
   return MethodTemplate;
@@ -1967,8 +1967,8 @@ cldoc.Constructor = (function(superClass) {
   Constructor.title = ['Constructor', 'Constructors'];
 
   function Constructor(node1) {
-    this.node = node1;
-    Constructor.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tConstructor.__super__.constructor.call(this, this.node);
   }
 
   return Constructor;
@@ -1983,8 +1983,8 @@ cldoc.Destructor = (function(superClass) {
   Destructor.title = ['Destructor', 'Destructors'];
 
   function Destructor(node1) {
-    this.node = node1;
-    Destructor.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tDestructor.__super__.constructor.call(this, this.node);
   }
 
   return Destructor;
@@ -2001,31 +2001,31 @@ cldoc.Base = (function(superClass) {
   Base.render_container_tag = 'table';
 
   function Base(node1) {
-    var ref;
-    this.node = node1;
-    Base.__super__.constructor.call(this, this.node);
-    this.type = this.node.children('type');
-    this.access = this.node.attr('access');
-    this.name = this.type.attr('name');
-    ref = this.type.attr('ref');
-    if (ref) {
-      this.id = ref.replace('#', '+');
-    }
+\tvar ref;
+\tthis.node = node1;
+\tBase.__super__.constructor.call(this, this.node);
+\tthis.type = this.node.children('type');
+\tthis.access = this.node.attr('access');
+\tthis.name = this.type.attr('name');
+\tref = this.type.attr('ref');
+\tif (ref) {
+\t  this.id = ref.replace('#', '+');
+\t}
   }
 
   Base.prototype.render = function() {
-    var access, e, ret, type;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + e(this.id) + '">';
-    access = this.access;
-    if (access === 'public') {
-      access = '';
-    }
-    type = new cldoc.Type(this.type);
-    ret += '<td class="keyword">' + e(access) + '</td>';
-    ret += '<td>' + type.render() + '</td>';
-    ret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar access, e, ret, type;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + e(this.id) + '">';
+\taccess = this.access;
+\tif (access === 'public') {
+\t  access = '';
+\t}
+\ttype = new cldoc.Type(this.type);
+\tret += '<td class="keyword">' + e(access) + '</td>';
+\tret += '<td>' + type.render() + '</td>';
+\tret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return Base;
@@ -2042,31 +2042,31 @@ cldoc.Implements = (function(superClass) {
   Implements.render_container_tag = 'table';
 
   function Implements(node1) {
-    var ref;
-    this.node = node1;
-    Implements.__super__.constructor.call(this, this.node);
-    this.type = this.node.children('type');
-    this.access = this.node.attr('access');
-    this.name = this.type.attr('name');
-    ref = this.type.attr('ref');
-    if (ref) {
-      this.id = ref.replace('#', '+');
-    }
+\tvar ref;
+\tthis.node = node1;
+\tImplements.__super__.constructor.call(this, this.node);
+\tthis.type = this.node.children('type');
+\tthis.access = this.node.attr('access');
+\tthis.name = this.type.attr('name');
+\tref = this.type.attr('ref');
+\tif (ref) {
+\t  this.id = ref.replace('#', '+');
+\t}
   }
 
   Implements.prototype.render = function() {
-    var access, e, ret, type;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + e(this.id) + '">';
-    access = this.access;
-    if (access === 'public') {
-      access = '';
-    }
-    type = new cldoc.Type(this.type);
-    ret += '<td class="keyword">' + e(access) + '</td>';
-    ret += '<td>' + type.render() + '</td>';
-    ret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar access, e, ret, type;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + e(this.id) + '">';
+\taccess = this.access;
+\tif (access === 'public') {
+\t  access = '';
+\t}
+\ttype = new cldoc.Type(this.type);
+\tret += '<td class="keyword">' + e(access) + '</td>';
+\tret += '<td>' + type.render() + '</td>';
+\tret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return Implements;
@@ -2083,24 +2083,24 @@ cldoc.Subclass = (function(superClass) {
   Subclass.render_container_tag = 'table';
 
   function Subclass(node1) {
-    this.node = node1;
-    Subclass.__super__.constructor.call(this, this.node);
-    this.access = this.node.attr('access');
+\tthis.node = node1;
+\tSubclass.__super__.constructor.call(this, this.node);
+\tthis.access = this.node.attr('access');
   }
 
   Subclass.prototype.render = function() {
-    var access, e, ret;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + e(this.id) + '">';
-    access = this.access;
-    if (access === 'public') {
-      access = '';
-    }
-    ret += '<td class="keyword">' + e(access) + '</td>';
-    ret += '<td>' + cldoc.Page.make_link(this.ref, this.name) + '</td>';
-    ret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
-    ret += '</tr>';
-    return ret;
+\tvar access, e, ret;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + e(this.id) + '">';
+\taccess = this.access;
+\tif (access === 'public') {
+\t  access = '';
+\t}
+\tret += '<td class="keyword">' + e(access) + '</td>';
+\tret += '<td>' + cldoc.Page.make_link(this.ref, this.name) + '</td>';
+\tret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
+\tret += '</tr>';
+\treturn ret;
   };
 
   return Subclass;
@@ -2117,23 +2117,23 @@ cldoc.ImplementedBy = (function(superClass) {
   ImplementedBy.render_container_tag = 'table';
 
   function ImplementedBy(node1) {
-    this.node = node1;
-    ImplementedBy.__super__.constructor.call(this, this.node);
-    this.access = this.node.attr('access');
+\tthis.node = node1;
+\tImplementedBy.__super__.constructor.call(this, this.node);
+\tthis.access = this.node.attr('access');
   }
 
   ImplementedBy.prototype.render = function() {
-    var access, e, ret;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + e(this.id) + '">';
-    access = this.access;
-    if (access === 'public') {
-      access = '';
-    }
-    ret += '<td class="keyword">' + e(access) + '</td>';
-    ret += '<td>' + cldoc.Page.make_link(this.ref, this.name) + '</td>';
-    ret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar access, e, ret;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + e(this.id) + '">';
+\taccess = this.access;
+\tif (access === 'public') {
+\t  access = '';
+\t}
+\tret += '<td class="keyword">' + e(access) + '</td>';
+\tret += '<td>' + cldoc.Page.make_link(this.ref, this.name) + '</td>';
+\tret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return ImplementedBy;
@@ -2146,7 +2146,7 @@ cldoc.TemplateTypeParameter = (function(superClass) {
   extend(TemplateTypeParameter, superClass);
 
   function TemplateTypeParameter() {
-    return TemplateTypeParameter.__super__.constructor.apply(this, arguments);
+\treturn TemplateTypeParameter.__super__.constructor.apply(this, arguments);
   }
 
   TemplateTypeParameter.title = ['Template Parameter', 'Template Parameters'];
@@ -2154,24 +2154,24 @@ cldoc.TemplateTypeParameter = (function(superClass) {
   TemplateTypeParameter.render_container_tag = 'table';
 
   TemplateTypeParameter.prototype.render = function() {
-    var def, e, name, ret, tp;
-    e = cldoc.html_escape;
-    name = this.name;
-    def = this.node.attr('default');
-    tp = this.node.children('type');
-    ret = '<tr id="' + e(this.id) + '">';
-    name = '';
-    if (tp.length > 0) {
-      name += (new cldoc.Type(tp)).render() + ' ';
-    }
-    name += e(this.name);
-    if (def) {
-      name += ' = <span class="constant">' + def + '</span>';
-    }
-    ret += '<td>' + name + '</td>';
-    ret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
-    ret += '</tr>';
-    return ret;
+\tvar def, e, name, ret, tp;
+\te = cldoc.html_escape;
+\tname = this.name;
+\tdef = this.node.attr('default');
+\ttp = this.node.children('type');
+\tret = '<tr id="' + e(this.id) + '">';
+\tname = '';
+\tif (tp.length > 0) {
+\t  name += (new cldoc.Type(tp)).render() + ' ';
+\t}
+\tname += e(this.name);
+\tif (def) {
+\t  name += ' = <span class="constant">' + def + '</span>';
+\t}
+\tret += '<td>' + name + '</td>';
+\tret += '<td>' + cldoc.Doc.brief(this.node) + '</td>';
+\tret += '</tr>';
+\treturn ret;
   };
 
   return TemplateTypeParameter;
@@ -2188,93 +2188,93 @@ cldoc.Coverage = (function(superClass) {
   Coverage.title = ['Coverage', 'Coverage'];
 
   function Coverage(node1) {
-    this.node = node1;
-    Coverage.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tCoverage.__super__.constructor.call(this, this.node);
   }
 
   Coverage.prototype.get_coverage = function(type) {
-    var ret;
-    ret = {
-      documented: parseInt(type.attr('documented')),
-      undocumented: parseInt(type.attr('undocumented'))
-    };
-    ret.total = ret.documented + ret.undocumented;
-    ret.percentage = Math.round(100 * ret.documented / ret.total);
-    return ret;
+\tvar ret;
+\tret = {
+\t  documented: parseInt(type.attr('documented')),
+\t  undocumented: parseInt(type.attr('undocumented'))
+\t};
+\tret.total = ret.documented + ret.undocumented;
+\tret.percentage = Math.round(100 * ret.documented / ret.total);
+\treturn ret;
   };
 
   Coverage.prototype.render_sidebar_type = function(type) {
-    var a, cov, e, ret, tt, typename;
-    typename = type.attr('name');
-    cov = this.get_coverage(type);
-    e = cldoc.html_escape;
-    if (cov.documented === 0 && cov.undocumented === 0) {
-      return;
-    }
-    tt = cov.documented + ' out of ' + cov.total + ' (' + cov.percentage + '%)';
-    a = cldoc.Page.make_link(cldoc.Page.current_page + '#' + typename, typename);
-    ret = '<li>';
-    if (cov.undocumented === 0) {
-      ret += '<span class="bullet complete">&#x2713;</span>';
-    } else {
-      ret += '<span class="bullet incomplete">&#10007;</span>';
-    }
-    ret += a + '<div class="brief">' + e(tt) + '</div>';
-    return ret + '</li>';
+\tvar a, cov, e, ret, tt, typename;
+\ttypename = type.attr('name');
+\tcov = this.get_coverage(type);
+\te = cldoc.html_escape;
+\tif (cov.documented === 0 && cov.undocumented === 0) {
+\t  return;
+\t}
+\ttt = cov.documented + ' out of ' + cov.total + ' (' + cov.percentage + '%)';
+\ta = cldoc.Page.make_link(cldoc.Page.current_page + '#' + typename, typename);
+\tret = '<li>';
+\tif (cov.undocumented === 0) {
+\t  ret += '<span class="bullet complete">&#x2713;</span>';
+\t} else {
+\t  ret += '<span class="bullet incomplete">&#10007;</span>';
+\t}
+\tret += a + '<div class="brief">' + e(tt) + '</div>';
+\treturn ret + '</li>';
   };
 
   Coverage.prototype.render_sidebar = function() {
-    var j, len, ret, type, types;
-    types = this.node.children('type');
-    ret = '';
-    for (j = 0, len = types.length; j < len; j++) {
-      type = types[j];
-      ret += this.render_sidebar_type($(type));
-    }
-    return ret;
+\tvar j, len, ret, type, types;
+\ttypes = this.node.children('type');
+\tret = '';
+\tfor (j = 0, len = types.length; j < len; j++) {
+\t  type = types[j];
+\t  ret += this.render_sidebar_type($(type));
+\t}
+\treturn ret;
   };
 
   Coverage.prototype.render_type = function(type) {
-    var cov, e, file, j, len, len1, line, loc, o, ref2, ref3, ret, typename, undoc;
-    ret = '';
-    typename = type.attr('name');
-    cov = this.get_coverage(type);
-    if (cov.documented === 0 && cov.undocumented === 0) {
-      return ret;
-    }
-    e = cldoc.html_escape;
-    ret += '<h3 id="' + e(typename) + '">' + e(typename + ' (' + cov.percentage + '%)') + '</h3>';
-    ret += '<table class="coverage">';
-    ret += '<tr><td>Documented:</td><td>' + e(cov.documented) + '</td></tr>';
-    ret += '<tr><td>Undocumented:</td><td>' + e(cov.undocumented) + '</td></tr>';
-    ret += '</table><table class="undocumented">';
-    ref2 = type.children('undocumented');
-    for (j = 0, len = ref2.length; j < len; j++) {
-      undoc = ref2[j];
-      undoc = $(undoc);
-      ret += '<tr><td>' + e(undoc.attr('id')) + '</td>';
-      ref3 = undoc.children('location');
-      for (o = 0, len1 = ref3.length; o < len1; o++) {
-        loc = ref3[o];
-        loc = $(loc);
-        file = e(loc.attr('file'));
-        line = e(loc.attr('line') + ':' + loc.attr('column'));
-        ret += '<td>' + file + '</td><td>' + line + '</td>';
-        ret += '</tr><td></td>';
-      }
-    }
-    return ret + '</tr></table>';
+\tvar cov, e, file, j, len, len1, line, loc, o, ref2, ref3, ret, typename, undoc;
+\tret = '';
+\ttypename = type.attr('name');
+\tcov = this.get_coverage(type);
+\tif (cov.documented === 0 && cov.undocumented === 0) {
+\t  return ret;
+\t}
+\te = cldoc.html_escape;
+\tret += '<h3 id="' + e(typename) + '">' + e(typename + ' (' + cov.percentage + '%)') + '</h3>';
+\tret += '<table class="coverage">';
+\tret += '<tr><td>Documented:</td><td>' + e(cov.documented) + '</td></tr>';
+\tret += '<tr><td>Undocumented:</td><td>' + e(cov.undocumented) + '</td></tr>';
+\tret += '</table><table class="undocumented">';
+\tref2 = type.children('undocumented');
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  undoc = ref2[j];
+\t  undoc = $(undoc);
+\t  ret += '<tr><td>' + e(undoc.attr('id')) + '</td>';
+\t  ref3 = undoc.children('location');
+\t  for (o = 0, len1 = ref3.length; o < len1; o++) {
+\t\tloc = ref3[o];
+\t\tloc = $(loc);
+\t\tfile = e(loc.attr('file'));
+\t\tline = e(loc.attr('line') + ':' + loc.attr('column'));
+\t\tret += '<td>' + file + '</td><td>' + line + '</td>';
+\t\tret += '</tr><td></td>';
+\t  }
+\t}
+\treturn ret + '</tr></table>';
   };
 
   Coverage.prototype.render = function() {
-    var j, len, ret, type, types;
-    types = this.node.children('type');
-    ret = '';
-    for (j = 0, len = types.length; j < len; j++) {
-      type = types[j];
-      ret += this.render_type($(type));
-    }
-    return ret;
+\tvar j, len, ret, type, types;
+\ttypes = this.node.children('type');
+\tret = '';
+\tfor (j = 0, len = types.length; j < len; j++) {
+\t  type = types[j];
+\t  ret += this.render_type($(type));
+\t}
+\treturn ret;
   };
 
   return Coverage;
@@ -2289,82 +2289,82 @@ cldoc.Arguments = (function(superClass) {
   Arguments.title = ['Arguments', 'Arguments'];
 
   function Arguments(node1) {
-    this.node = node1;
-    Arguments.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tArguments.__super__.constructor.call(this, this.node);
   }
 
   Arguments.prototype.render_sidebar_function = function(func) {
-    var a;
-    a = cldoc.Page.make_link(cldoc.Page.current_page + '#' + func.attr('id'), func.attr('name'));
-    return '<li>' + a + '</li>';
+\tvar a;
+\ta = cldoc.Page.make_link(cldoc.Page.current_page + '#' + func.attr('id'), func.attr('name'));
+\treturn '<li>' + a + '</li>';
   };
 
   Arguments.prototype.render_sidebar = function() {
-    var f, funcs, j, len, ret;
-    funcs = this.node.children('function');
-    ret = '';
-    for (j = 0, len = funcs.length; j < len; j++) {
-      f = funcs[j];
-      ret += this.render_sidebar_function($(f));
-    }
-    return ret;
+\tvar f, funcs, j, len, ret;
+\tfuncs = this.node.children('function');
+\tret = '';
+\tfor (j = 0, len = funcs.length; j < len; j++) {
+\t  f = funcs[j];
+\t  ret += this.render_sidebar_function($(f));
+\t}
+\treturn ret;
   };
 
   Arguments.prototype.render_function = function(func) {
-    var e, file, j, len, line, loc, misspelled, names, ref2, ret, undocumented, x;
-    e = cldoc.html_escape;
-    ret = '<tr class="title" id="' + e(func.attr('id')) + '"> <td class="identifier">' + e(func.attr('name')) + '</td>';
-    ref2 = func.children('location');
-    for (j = 0, len = ref2.length; j < len; j++) {
-      loc = ref2[j];
-      loc = $(loc);
-      file = e(loc.attr('file'));
-      line = e(loc.attr('line') + ':' + loc.attr('column'));
-      ret += '<td>' + file + '</td><td>' + line + '</td>';
-      ret += '</tr><tr><td></td>';
-    }
-    ret += '</tr>';
-    undocumented = func.children('undocumented');
-    if (undocumented.length > 0) {
-      names = ((function() {
-        var len1, o, results1;
-        results1 = [];
-        for (o = 0, len1 = undocumented.length; o < len1; o++) {
-          x = undocumented[o];
-          results1.push($(x).attr('name'));
-        }
-        return results1;
-      })()).join(', ');
-      ret += '<tr class="undocumented"><td>Undocumented arguments:</td>' + '<td colspan="2">' + e(names) + '</td></tr>';
-    }
-    misspelled = func.children('misspelled');
-    if (misspelled.length > 0) {
-      names = ((function() {
-        var len1, o, results1;
-        results1 = [];
-        for (o = 0, len1 = undocumented.length; o < len1; o++) {
-          x = undocumented[o];
-          results1.push($(x).attr('name'));
-        }
-        return results1;
-      })()).join(', ');
-      ret += '<tr class="misspelled"><td>Misspelled arguments:</td>' + '<td colspan="2">' + e(names) + '</td></tr>';
-    }
-    if (func.children('undocumented-return')) {
-      ret += '<tr class="undocumented"><td colspan="3">Undocumented return value</td></tr>';
-    }
-    return ret;
+\tvar e, file, j, len, line, loc, misspelled, names, ref2, ret, undocumented, x;
+\te = cldoc.html_escape;
+\tret = '<tr class="title" id="' + e(func.attr('id')) + '"> <td class="identifier">' + e(func.attr('name')) + '</td>';
+\tref2 = func.children('location');
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  loc = ref2[j];
+\t  loc = $(loc);
+\t  file = e(loc.attr('file'));
+\t  line = e(loc.attr('line') + ':' + loc.attr('column'));
+\t  ret += '<td>' + file + '</td><td>' + line + '</td>';
+\t  ret += '</tr><tr><td></td>';
+\t}
+\tret += '</tr>';
+\tundocumented = func.children('undocumented');
+\tif (undocumented.length > 0) {
+\t  names = ((function() {
+\t\tvar len1, o, results1;
+\t\tresults1 = [];
+\t\tfor (o = 0, len1 = undocumented.length; o < len1; o++) {
+\t\t  x = undocumented[o];
+\t\t  results1.push($(x).attr('name'));
+\t\t}
+\t\treturn results1;
+\t  })()).join(', ');
+\t  ret += '<tr class="undocumented"><td>Undocumented arguments:</td>' + '<td colspan="2">' + e(names) + '</td></tr>';
+\t}
+\tmisspelled = func.children('misspelled');
+\tif (misspelled.length > 0) {
+\t  names = ((function() {
+\t\tvar len1, o, results1;
+\t\tresults1 = [];
+\t\tfor (o = 0, len1 = undocumented.length; o < len1; o++) {
+\t\t  x = undocumented[o];
+\t\t  results1.push($(x).attr('name'));
+\t\t}
+\t\treturn results1;
+\t  })()).join(', ');
+\t  ret += '<tr class="misspelled"><td>Misspelled arguments:</td>' + '<td colspan="2">' + e(names) + '</td></tr>';
+\t}
+\tif (func.children('undocumented-return')) {
+\t  ret += '<tr class="undocumented"><td colspan="3">Undocumented return value</td></tr>';
+\t}
+\treturn ret;
   };
 
   Arguments.prototype.render = function() {
-    var c, f, funcs, j, len;
-    funcs = this.node.children('function');
-    c = '<table class="function">';
-    for (j = 0, len = funcs.length; j < len; j++) {
-      f = funcs[j];
-      c += this.render_function($(f));
-    }
-    return c + '</table>';
+\tvar c, f, funcs, j, len;
+\tfuncs = this.node.children('function');
+\tc = '<table class="function">';
+\tfor (j = 0, len = funcs.length; j < len; j++) {
+\t  f = funcs[j];
+\t  c += this.render_function($(f));
+\t}
+\treturn c + '</table>';
   };
 
   return Arguments;
@@ -2379,12 +2379,12 @@ cldoc.Report = (function(superClass) {
   Report.title = ['Report', 'Report'];
 
   function Report(node1) {
-    this.node = node1;
-    Report.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tReport.__super__.constructor.call(this, this.node);
   }
 
   Report.prototype.render_sidebar = function() {
-    return '<li>' + cldoc.Page.make_link(this.ref, this.name) + '</li>';
+\treturn '<li>' + cldoc.Page.make_link(this.ref, this.name) + '</li>';
   };
 
   Report.prototype.render = function(container) {};
@@ -2403,73 +2403,73 @@ cldoc.References = (function(superClass) {
   References.render_container_tag = 'table';
 
   function References(node1) {
-    this.node = node1;
-    References.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tReferences.__super__.constructor.call(this, this.node);
   }
 
   References.prototype.render_sidebar = function() {
-    var a, child, e, j, len, ref2, ret;
-    ret = '';
-    e = cldoc.html_escape;
-    ref2 = this.node.children();
-    for (j = 0, len = ref2.length; j < len; j++) {
-      child = ref2[j];
-      child = $(child);
-      a = cldoc.Page.make_link(cldoc.Page.current_page + '#ref-' + child.attr('id'), child.attr('name'));
-      ret += '<li><span class="keyword">' + e(cldoc.tag(child)[0]) + ' ' + a + '</span></li>';
-    }
-    return ret;
+\tvar a, child, e, j, len, ref2, ret;
+\tret = '';
+\te = cldoc.html_escape;
+\tref2 = this.node.children();
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  child = ref2[j];
+\t  child = $(child);
+\t  a = cldoc.Page.make_link(cldoc.Page.current_page + '#ref-' + child.attr('id'), child.attr('name'));
+\t  ret += '<li><span class="keyword">' + e(cldoc.tag(child)[0]) + ' ' + a + '</span></li>';
+\t}
+\treturn ret;
   };
 
   References.prototype.render = function() {
-    var child, component, e, file, id, j, kw, len, len1, len2, line, loc, name, o, p, ref2, ref3, ref4, refs, ret, tp, x;
-    ret = '';
-    e = cldoc.html_escape;
-    ref2 = this.node.children();
-    for (j = 0, len = ref2.length; j < len; j++) {
-      child = ref2[j];
-      child = $(child);
-      kw = '<span class="keyword">' + e(cldoc.tag(child)[0]) + '&nbsp;' + '</span>';
-      id = '<span class="identifier">' + e(child.attr('id')) + '</span>';
-      ret += '<tr id="' + e('ref-' + child.attr('id')) + '"><td class="title">' + kw + id + '</td>';
-      ref3 = child.children('location');
-      for (o = 0, len1 = ref3.length; o < len1; o++) {
-        loc = ref3[o];
-        loc = $(loc);
-        file = e(loc.attr('file'));
-        line = e(loc.attr('line') + ':' + loc.attr('column'));
-        ret += '<td>' + file + '</td>';
-        ret += '<td>' + line + '</td>';
-        ret += '</tr><tr><td></td>';
-      }
-      ret += '</tr>';
-      ref4 = child.children('doctype');
-      for (p = 0, len2 = ref4.length; p < len2; p++) {
-        tp = ref4[p];
-        tp = $(tp);
-        name = tp.attr('name');
-        component = tp.attr('component');
-        if (component) {
-          name += '.' + component;
-        }
-        refs = ((function() {
-          var len3, ref5, results1, u;
-          ref5 = tp.children('ref');
-          results1 = [];
-          for (u = 0, len3 = ref5.length; u < len3; u++) {
-            x = ref5[u];
-            results1.push($(x).attr('name'));
-          }
-          return results1;
-        })()).join(', ');
-        ret += '<tr class="missing">';
-        ret += '<td>' + e(name) + '</td>';
-        ret += '<td>' + e(refs) + '</td>';
-        ret += '<td></td>';
-        ret += '</tr>';
-      }
-    }
-    return ret;
+\tvar child, component, e, file, id, j, kw, len, len1, len2, line, loc, name, o, p, ref2, ref3, ref4, refs, ret, tp, x;
+\tret = '';
+\te = cldoc.html_escape;
+\tref2 = this.node.children();
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  child = ref2[j];
+\t  child = $(child);
+\t  kw = '<span class="keyword">' + e(cldoc.tag(child)[0]) + '&nbsp;' + '</span>';
+\t  id = '<span class="identifier">' + e(child.attr('id')) + '</span>';
+\t  ret += '<tr id="' + e('ref-' + child.attr('id')) + '"><td class="title">' + kw + id + '</td>';
+\t  ref3 = child.children('location');
+\t  for (o = 0, len1 = ref3.length; o < len1; o++) {
+\t\tloc = ref3[o];
+\t\tloc = $(loc);
+\t\tfile = e(loc.attr('file'));
+\t\tline = e(loc.attr('line') + ':' + loc.attr('column'));
+\t\tret += '<td>' + file + '</td>';
+\t\tret += '<td>' + line + '</td>';
+\t\tret += '</tr><tr><td></td>';
+\t  }
+\t  ret += '</tr>';
+\t  ref4 = child.children('doctype');
+\t  for (p = 0, len2 = ref4.length; p < len2; p++) {
+\t\ttp = ref4[p];
+\t\ttp = $(tp);
+\t\tname = tp.attr('name');
+\t\tcomponent = tp.attr('component');
+\t\tif (component) {
+\t\t  name += '.' + component;
+\t\t}
+\t\trefs = ((function() {
+\t\t  var len3, ref5, results1, u;
+\t\t  ref5 = tp.children('ref');
+\t\t  results1 = [];
+\t\t  for (u = 0, len3 = ref5.length; u < len3; u++) {
+\t\t\tx = ref5[u];
+\t\t\tresults1.push($(x).attr('name'));
+\t\t  }
+\t\t  return results1;
+\t\t})()).join(', ');
+\t\tret += '<tr class="missing">';
+\t\tret += '<td>' + e(name) + '</td>';
+\t\tret += '<td>' + e(refs) + '</td>';
+\t\tret += '<td></td>';
+\t\tret += '</tr>';
+\t  }
+\t}
+\treturn ret;
   };
 
   return References;
@@ -2486,27 +2486,27 @@ cldoc.Union = (function(superClass) {
   Union.render_container_tag = 'table';
 
   function Union(node1) {
-    this.node = node1;
-    Union.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tUnion.__super__.constructor.call(this, this.node);
   }
 
   Union.prototype.render = function() {
-    var child, j, len, ref2, ret, tp;
-    ret = '<tr class="union">';
-    ret += '<td><span class="keyword">union</span></td>';
-    ret += '<td></td>';
-    ret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
-    ret += '</tr><tr><td colspan="3"><table class="fields union">';
-    ref2 = this.node.children();
-    for (j = 0, len = ref2.length; j < len; j++) {
-      child = ref2[j];
-      child = $(child);
-      tp = cldoc.Page.node_type(child);
-      if (tp) {
-        ret += new tp(child).render();
-      }
-    }
-    return ret + '</table></td></tr>';
+\tvar child, j, len, ref2, ret, tp;
+\tret = '<tr class="union">';
+\tret += '<td><span class="keyword">union</span></td>';
+\tret += '<td></td>';
+\tret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
+\tret += '</tr><tr><td colspan="3"><table class="fields union">';
+\tref2 = this.node.children();
+\tfor (j = 0, len = ref2.length; j < len; j++) {
+\t  child = ref2[j];
+\t  child = $(child);
+\t  tp = cldoc.Page.node_type(child);
+\t  if (tp) {
+\t\tret += new tp(child).render();
+\t  }
+\t}
+\treturn ret + '</table></td></tr>';
   };
 
   return Union;
@@ -2521,9 +2521,9 @@ cldoc.GObjectClass = (function(superClass) {
   GObjectClass.title = ['GObject Class', 'GObject Classes'];
 
   function GObjectClass(node1) {
-    this.node = node1;
-    GObjectClass.__super__.constructor.call(this, this.node);
-    this.keyword = 'struct';
+\tthis.node = node1;
+\tGObjectClass.__super__.constructor.call(this, this.node);
+\tthis.keyword = 'struct';
   }
 
   return GObjectClass;
@@ -2538,9 +2538,9 @@ cldoc.GObjectInterface = (function(superClass) {
   GObjectInterface.title = ['GObject Interface', 'GObject Interfaces'];
 
   function GObjectInterface(node1) {
-    this.node = node1;
-    GObjectInterface.__super__.constructor.call(this, this.node);
-    this.keyword = 'interface';
+\tthis.node = node1;
+\tGObjectInterface.__super__.constructor.call(this, this.node);
+\tthis.keyword = 'interface';
   }
 
   return GObjectInterface;
@@ -2555,9 +2555,9 @@ cldoc.GObjectBoxed = (function(superClass) {
   GObjectBoxed.title = ['GObject Boxed Structure', 'GObject Boxed Structures'];
 
   function GObjectBoxed(node1) {
-    this.node = node1;
-    GObjectBoxed.__super__.constructor.call(this, this.node);
-    this.keyword = 'struct';
+\tthis.node = node1;
+\tGObjectBoxed.__super__.constructor.call(this, this.node);
+\tthis.keyword = 'struct';
   }
 
   return GObjectBoxed;
@@ -2574,29 +2574,29 @@ cldoc.GObjectProperty = (function(superClass) {
   GObjectProperty.render_container_tag = 'table';
 
   function GObjectProperty(node1) {
-    this.node = node1;
-    GObjectProperty.__super__.constructor.call(this, this.node);
+\tthis.node = node1;
+\tGObjectProperty.__super__.constructor.call(this, this.node);
   }
 
   GObjectProperty.prototype.render = function() {
-    var e, j, len, mode, ref2, ret, x;
-    e = cldoc.html_escape;
-    ret = '<tr id="' + this.node.attr('id') + '">';
-    ret += '<td class="gobject_property_name identifier">' + e(this.node.attr('name')) + '</td>';
-    mode = this.node.attr('mode');
-    ret += '<td class="gobject_property_mode">';
-    if (mode) {
-      ret += '<ul class="gobject_property_mode">';
-      ref2 = mode.split(',');
-      for (j = 0, len = ref2.length; j < len; j++) {
-        x = ref2[j];
-        ret += '<li class="keyword">' + e(x) + '</li>';
-      }
-      ret += '</ul>';
-    }
-    ret += '<td class="gobject_property_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
-    ret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
-    return ret + '</tr>';
+\tvar e, j, len, mode, ref2, ret, x;
+\te = cldoc.html_escape;
+\tret = '<tr id="' + this.node.attr('id') + '">';
+\tret += '<td class="gobject_property_name identifier">' + e(this.node.attr('name')) + '</td>';
+\tmode = this.node.attr('mode');
+\tret += '<td class="gobject_property_mode">';
+\tif (mode) {
+\t  ret += '<ul class="gobject_property_mode">';
+\t  ref2 = mode.split(',');
+\t  for (j = 0, len = ref2.length; j < len; j++) {
+\t\tx = ref2[j];
+\t\tret += '<li class="keyword">' + e(x) + '</li>';
+\t  }
+\t  ret += '</ul>';
+\t}
+\tret += '<td class="gobject_property_type">' + new cldoc.Type(this.node.children('type')).render() + '</td>';
+\tret += '<td class="doc">' + cldoc.Doc.either(this.node) + '</td>';
+\treturn ret + '</tr>';
   };
 
   return GObjectProperty;

@@ -30,5 +30,5 @@ class Typedef(Node):
 			typecursor = cursor
 
 		self.type = Type(cursor.underlying_typedef_type, typecursor)
-# vi:ts=4:et
+
 # vi:ts=4:et

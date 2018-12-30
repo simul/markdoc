@@ -9,24 +9,24 @@ add_library(transport ${SOURCES})
 
 set(CLDOC "" CACHE STRING "User specified '/path/to/cldoc'")
 if(CLDOC STREQUAL "")
-	find_program(CLDOC cldoc)
+    find_program(CLDOC cldoc)
 elseif(NOT EXISTS ${CLDOC})
-	message(FATAL_ERROR "CLDOC was set to '${CLDOC}' but does not exist")
+    message(FATAL_ERROR "CLDOC was set to '${CLDOC}' but does not exist")
 endif()
 
 if(NOT DOCS_OUTPUT_DIR)
-	set(DOCS_OUTPUT_DIR "gendocs" CACHE STRING "Generated documentation output directory" FORCE)
+    set(DOCS_OUTPUT_DIR "gendocs" CACHE STRING "Generated documentation output directory" FORCE)
 endif()
 
 if(NOT DOCS_DIR)
-	set(DOCS_DIR "" CACHE STRING "Location of external documentation files to be merged in" FORCE)
+    set(DOCS_DIR "" CACHE STRING "Location of external documentation files to be merged in" FORCE)
 endif()
 
 if(NOT ${CLDOC} STREQUAL "CLDOC-NOTFOUND")
   if(NOT ${DOCS_DIR} STREQUAL "")
-  	set(CLDOC_MERGE "--merge ${DOCS_DIR}")
+      set(CLDOC_MERGE "--merge ${DOCS_DIR}")
   else()
-  	set(CLDOC_MERGE "")
+      set(CLDOC_MERGE "")
   endif()
 
   add_custom_target(docs COMMAND

@@ -1519,7 +1519,7 @@ class Cursor(Structure):
 		return conf.lib.clang_getCursorDefinition(self)
 
 	def get_usr(self):
-		"""Return the Unified Symbol Resultion (USR) for the entity referenced
+		"""Return the Unified Symbol Resolution (USR) for the entity referenced
 		by the given cursor (or None).
 
 		A Unified Symbol Resolution (USR) is a string that identifies a

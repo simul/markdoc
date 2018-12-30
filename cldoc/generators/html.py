@@ -51,7 +51,6 @@ class Html(Generator):
 			with fs.fs.open(outfile, 'w') as o:
 				o.write(content)
 				
-		Generator.generate(self, outdir)
 		if "CLDOC_DEV" in os.environ:
 			fs.fs.rmtree(os.path.join(output, "javascript"), True)
 			fs.fs.copytree(os.path.join(datadir, "javascript"), os.path.join(output, "javascript"))

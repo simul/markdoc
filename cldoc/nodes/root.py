@@ -22,12 +22,13 @@ class Root(Node):
 	def is_anonymous(self):
 		return True
 
-	def set_title(self,t):
-		self._title=t
-
 	@property
 	def title(self):
 		return self._title
+
+	def has_any_docs(self):
+		# don't create a page for root.
+		return False
 
 	def sorted_children(self):
 		schildren = list(Node.sorted_children(self))

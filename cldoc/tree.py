@@ -27,6 +27,62 @@ from . import example
 from . import utf8
 from . import log
 
+# RVK: to enable multithreaded processing by clang.
+import threading
+import time
+
+threadLock = threading.Lock()
+
+class myThread (threading.Thread):
+	def __init__(self, threadID, filename, index,flags, options, files, comment):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.filename = filename
+		self.index=index
+		self.flags = flags
+		self.options=options
+		self.headers = {}
+		self.processed = {}
+		#self.categories = Comment.RangeMap()
+		self.commentsdbs = Defdict()
+		self.tu=None
+		self.includes={}
+		self.extractfiles=[filename]
+		self.files=files
+		self.db=None
+		self.comment=comment
+	def run(self):
+		#print ("Starting " + self.name)
+		# Get lock to synchronize threads
+		#threadLock.acquire()
+		#print_time(self.name, self.counter, 3)
+		
+
+		print('{0} (0): '.format(self.filename))
+		try:
+			self.tu = self.index.parse(self.filename, self.flags, options=cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
+			
+			for inc in self.tu.get_includes():
+				filename = str(inc.include)
+				self.includes[filename] = True
+				
+			for filename in self.includes:
+				if (not filename in self.files) or filename in self.extractfiles:
+					continue
+
+				self.extractfiles.append(filename)
+
+			for e in self.extractfiles:
+				if e in self.processed:
+					continue
+				self.db=comment.CommentsDatabase(e, self.tu, self.options)
+
+		except cindex.LibclangError as e:
+			sys.stderr.write("\nError: Failed to parse.\n" + str(e) + "\n\n")
+			
+		# Free lock to release next thread
+		#threadLock.release()
+
 from .cmp import cmp
 
 import os, sys, re, glob, platform
@@ -194,6 +250,7 @@ class Tree(documentmerger.DocumentMerger):
 		return filename.endswith('.hh') or filename.endswith('.hpp') or filename.endswith('.h')
 
 	def find_node_comment(self, node):
+
 		for location in node.comment_locations:
 			db = self.commentsdbs[location.file.name]
 
@@ -213,21 +270,33 @@ class Tree(documentmerger.DocumentMerger):
 
 		self.index = cindex.Index.create()
 		self.headers = {}
+		thread_id =1
+		threads = []
 
 		for f in self.files:
 			if f in self.processed:
 				continue
+			
+			# Create new threads
+			thr = myThread(thread_id, f, self.index,self.flags,self.options, self.files, comment)
+			thread_id=thread_id+1
+			# Start new Threads
+			thr.start()
+			
+			# Add threads to thread list
+			threads.append(thr)
+			
+		# Wait for all threads to complete
+		for t in threads:
+			t.join()
 
-			#print('Processing {0}'.format(os.path.basename(f)))
-			try:
-				tu = self.index.parse(f, self.flags)
-			except:
-				continue
-
-			if len(tu.diagnostics) != 0:
+		for t in threads:
+			#self.processed.update(t.processed)
+			print(t.filename+"(0): visiting.")
+			if len(t.tu.diagnostics) != 0:
 				fatal = False
 
-				for d in tu.diagnostics:
+				for d in t.tu.diagnostics:
 					#rewrite Clang errors in visual studio format.
 					# e.g. C:\\vector.h:249:43: error: function declared 'cdecl' here was previously declared without calling convention
 					# becomes C:\\vector.h(249): error: function declared 'cdecl' here was previously declared without calling convention
@@ -246,30 +315,24 @@ class Tree(documentmerger.DocumentMerger):
 					sys.stderr.write("\nCould not generate documentation due to parser errors\n")
 					sys.exit(1)
 
-			if not tu:
+			if not t.tu:
 				sys.stderr.write("Could not parse file %s...\n" % (f,))
 				sys.exit(1)
 
 			# Extract comments from files and included files that we are
 			# supposed to inspect
-			extractfiles = [f]
-
-			for inc in tu.get_includes():
-				filename = str(inc.include)
+			for filename in t.includes:
 				self.headers[filename] = True
 
-				if filename in self.processed or (not filename in self.files) or filename in extractfiles:
+			for e in t.extractfiles:
+				if e in self.processed:
 					continue
-
-				extractfiles.append(filename)
-
-			for e in extractfiles:
-				db = comment.CommentsDatabase(e, tu, self.options)
+				db = t.db
 
 				self.add_categories(db.category_names)
 				self.commentsdbs[e] = db
 
-			self.visit(tu.cursor.get_children())
+			self.visit(t.tu.cursor.get_children())
 
 			for f in self.processing:
 				self.processed[f] = True
@@ -278,7 +341,10 @@ class Tree(documentmerger.DocumentMerger):
 
 		# Construct hierarchy of nodes.
 		for node in self.all_nodes:
+			if node==None:
+				continue
 			q = node.qid
+
 			if node.parent is None:
 				par = self.find_parent(node)
 
@@ -408,6 +474,14 @@ class Tree(documentmerger.DocumentMerger):
 	def cross_ref_node(self, node):
 		if not node.comment is None:
 			node.comment.resolve_refs(self.find_ref, node)
+			for key in node.comment.global_properties:
+				val=node.comment.global_properties[key]
+				if key=='title':
+					node.set_title(val)
+				elif key=='slug':
+					node.slug=val
+				elif key=='weight':
+					node.weight=val
 
 		for child in node.children:
 			self.cross_ref_node(child)
@@ -459,10 +533,10 @@ class Tree(documentmerger.DocumentMerger):
 
 		# If node is a C function, then see if we should group it to a struct
 		# RVK: Wait, what?
-		#parent = self.node_on_c_struct(node)
+		parent = self.node_on_c_struct(node)
 
-		#if parent:
-		#	return parent
+		if parent:
+			return parent
 
 		while cursor:
 			cursor = cursor.semantic_parent
@@ -527,18 +601,18 @@ class Tree(documentmerger.DocumentMerger):
 				item = next(citer)
 			except StopIteration:
 				return
-
+			f = item.location.file
 			# Check the source of item
-			if not item.location.file:
+			if not f:
 				self.visit(item.get_children())
 				continue
-
+			locstr=str(f)
 			# Ignore files we already processed
-			if str(item.location.file) in self.processed:
+			if locstr in self.processed:
 				continue
 
 			# Ignore files other than the ones we are scanning for
-			if not str(item.location.file) in self.files:
+			if not locstr in self.files:
 				continue
 
 			# Ignore unexposed things
@@ -546,7 +620,7 @@ class Tree(documentmerger.DocumentMerger):
 				self.visit(item.get_children(), parent)
 				continue
 
-			self.processing[str(item.location.file)] = True
+			self.processing[locstr] = True
 
 			if item.kind in self.kindmap:
 				cls = self.kindmap[item.kind]
@@ -556,6 +630,8 @@ class Tree(documentmerger.DocumentMerger):
 					continue
 
 				# see if we already have a node for this thing
+				# usr, or Unified Symbol Resolution (USR) is a string that identifies a
+				# particular entity (function, class, variable, etc.)
 				node = self.usr_to_node[item.get_usr()]
 
 				if not node or self.is_unique_anon_struct(node, parent):
@@ -590,9 +666,9 @@ class Tree(documentmerger.DocumentMerger):
 						for node in ret:
 							self.register_node(node, par)
 
-				ignoretop = [cindex.CursorKind.FRIEND_DECL, cindex.CursorKind.TYPE_REF, cindex.CursorKind.TEMPLATE_REF, cindex.CursorKind.NAMESPACE_REF,cindex.CursorKind.PARM_DECL]
+				'''ignoretop = [cindex.CursorKind.FRIEND_DECL, cindex.CursorKind.TYPE_REF, cindex.CursorKind.TEMPLATE_REF, cindex.CursorKind.NAMESPACE_REF,cindex.CursorKind.PARM_DECL,cindex.CursorKind.MACRO_INSTANTIATION,cindex.CursorKind.INCLUSION_DIRECTIVE ,cindex.CursorKind.MACRO_DEFINITION,cindex.CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION]
 
 				if (not par or ret is None) and not item.kind in ignoretop:
-					log.warning("Unhandled cursor: %s", item.kind)
+					log.warning("Unhandled cursor: %s", item.kind)'''
 
 # vi:ts=4:et

@@ -11,9 +11,9 @@ inline(htmlpath, {
   rootpath: path.dirname(htmlpath)
 }, function(err, html) {
   if (err) {
-  	process.stderr.write("Error: " + err + "\n");
-  	process.exit(1);
+      process.stderr.write("Error: " + err + "\n");
+      process.exit(1);
   } else {
-  	process.stdout.write(html);
+      process.stdout.write(html);
   }
 });

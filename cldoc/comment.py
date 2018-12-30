@@ -20,7 +20,6 @@ from pyparsing import *
 
 import os, re, sys, bisect
 
-
 class Sorted(list):
 	def __init__(self, key=None):
 		if key is None:
@@ -56,12 +55,12 @@ class Sorted(list):
 		return self.bisect(item, bisect.bisect_right)
 
 	def find(self, key):
-		i = bisect.bisect_left(self.keys, key)
-
-		if i != len(self.keys) and self.keys[i] == key:
-			return self[i]
-		else:
+		i = bisect.bisect_right(self.keys, key)
+		if i<=0 or i>len(self.keys):
 			return None
+		self.keys.pop(i-1)
+		result=self.pop(i-1)
+		return result
 
 class Comment(object):
 	parser=Parser()
@@ -124,11 +123,8 @@ class Comment(object):
 			return ret
 
 	redocref = re.compile('(?P<isregex>[$]?)<(?:\\[(?P<refname>[^\\]]*)\\])?(?P<ref>operator(?:>>|>|>=)|[^>\n]+)>')
-	redoccode = re.compile('\\\\code(.*\\n?)\\\\endcode', re.M | re.S)
-	#redoccode = re.compile('^	\\[code\\]\n(?P<code>(?:(?:	.*|)\n)*)', re.M)
+	redoccode = re.compile('^	\\[code\\]\n(?P<code>(?:(?:	.*|)\n)*)', re.M)
 	redocmcode = re.compile('(^ *(`{3,}|~{3,}).*?\\2)', re.M | re.S)
-
-	re_dox_ref=re.compile('\\\\(?P<command>[a-zA-Z]+)\\s+(?P<ref>\\w+)(?:\\s+"(?P<refname>.*)")?')
 
 	def __init__(self, text, location, opts):
 		self.__dict__['docstrings'] = []
@@ -136,6 +132,7 @@ class Comment(object):
 
 		self.__dict__['location'] = location
 		self.__dict__['_resolved'] = False
+		self.global_properties={}
 
 		self.doc = text
 		self.brief = ''
@@ -145,7 +142,8 @@ class Comment(object):
 		self.parsedComment=ParsedComment()
 
 	def __setattr__(self, name, val):
-
+		#  if not name in self.docstrings:
+		#	 self.docstrings.append(name)
 		if isinstance(val, dict):
 			for key in val:
 				if not isinstance(val[key], Comment.String):
@@ -188,143 +186,42 @@ class Comment(object):
 
 		# First split examples
 		components = self.redoccode_split(doc)
-		line_offset=0
+
 		for c in components:
 			if isinstance(c, Comment.Example) or isinstance(c, Comment.MarkdownCode):
-				ret.append((line_offset, c, None, None, None))
-				line_offset+=c.count('\n')
+				ret.append((c, None, None))
 			else:
 				lastpos = 0
-				pos = 0
-				while pos<len(c):
-					doc_ref= Comment.redocref.search(c, pos)
-					dox_ref= Comment.re_dox_ref.search(c,pos)
-					min_pos=len(c)
-					ref=None
-					refname=None
-					command=None
-					if doc_ref:
-						if doc_ref.start()<min_pos:
-							min_pos=doc_ref.start()
-					if dox_ref:
-						if dox_ref.start()<min_pos:
-							min_pos=dox_ref.start()
-					if doc_ref and min_pos==doc_ref.start():
-						m=doc_ref
-						span = m.span(0)
-						prefix = c[lastpos:span[0]]
-						lastpos = span[1]
-						command='ref'
-						ref = m.group('ref')
-						refname = m.group('refname')
 
+				for m in Comment.redocref.finditer(c):
+					span = m.span(0)
 
-						if len(m.group('isregex')) > 0:
-							ref = re.compile(ref)
+					prefix = c[lastpos:span[0]]
+					lastpos = span[1]
 
-					elif dox_ref and min_pos==dox_ref.start():
-						m=dox_ref
-						span = m.span(0)
-						prefix = c[lastpos:span[0]]
-						lastpos = span[1]
-						try:
-							command = m.group('command')
-							ref = m.group('ref')
-							refname = m.group('refname')
-						except:
-							pass
-					else:
-						prefix=c[lastpos:]
-						lastpos=len(c)
-					ret.append((line_offset,prefix,command,ref, refname))
-					pos=lastpos
-					line_offset+=prefix.count('\n')
+					ref = m.group('ref')
+					refname = m.group('refname')
+
+					if not refname:
+						refname = None
+
+					if len(m.group('isregex')) > 0:
+						ref = re.compile(ref)
+
+					ret.append((prefix, ref, refname))
+
+				ret.append((c[lastpos:], None, None))
+
 		return ret
-	
+	def merge_two_dicts(x, y):
+		z = x.copy()   # start with x's keys and values
+		z.update(y)    # modifies z with y's keys and values & returns None
+		return z
 	def resolve_refs_for_doc(self, doc, resolver, root):
 		Comment.parser.reset()
-		comps = self.redoc_split(utf8.utf8(doc))
 		if len(doc.components)>0:
 			comps=Comment.parser.parseFull(doc.components[0],resolver, root)
-			doc.components = comps
-		'''components = []
-
-		for pair in comps:
-			offset, fulltext, command, name, refname = pair
-			if command==None or command=='':
-				components.append(fulltext)
-				continue
-			lineno=int(0)
-			filename=''
-			if self.location:
-				if self.location.__class__.__name__=="SourceLocation":
-					filename=self.location.file.name
-					if self.location.line:
-						lineno=self.location.line
-				else:
-					filename=self.location
-					lineno=0
-			lineno+=offset
-			if command=='ref':
-				if name is None:
-					continue
-
-				if isinstance(name, utf8.string):
-					names = name.split('::')
-				else:
-					names = [name]
-
-				nds = [root]
-
-				for j in range(len(names)):
-					newnds = []
-
-					for n in nds:
-						newnds += resolver(n, names[j], j == 0)
-
-					if len(newnds) == 0:
-						break
-
-					nds = newnds
-
-				if len(newnds) > 0:
-					components.append((newnds, refname))
-				else:
-					components.append(Comment.UnresolvedReference(name))
-			elif command=='a' or command=='em':
-				components.append('**'+name+'**')
-			elif command=='param' or command=='p':
-				components.append('\n**'+name+'**')
-			elif command=='return':
-				components.append('\n**return:** '+name)
-			elif command=='toc':
-				components.append('\n###Contents\n')
-			elif command=='brief':
-				pass
-			elif command=='image':
-				parts=os.path.split(filename);
-				path=''
-				if len(parts)>0:
-					path=parts[0]
-				imagepaths=[path]
-				found=False
-				for i in imagepaths:
-					filepath=i+'/'+refname
-					if os.path.exists(filepath):
-						found=True
-						break
-				if not found:
-					print(filename+' ('+str(lineno)+'): warning: Image not found: '+ filepath)
-				else:
-					components.append('[![alt text]("'+refname+' "'+refname+'")')
-					self.images.append(refname)
-					self.imagepaths.append(i)
-			else:
-				if filename=='':
-					print(': warning: Unknown command \\'+ command)
-				print(filename+' ('+str(lineno)+'): warning: Unknown command \\'+ command)
-
-		doc.components = components'''
+			self.global_properties.update(Comment.parser.properties)
 
 	def resolve_refs(self, resolver, root):
 		if self.__dict__['_resolved']:

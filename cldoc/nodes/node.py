@@ -45,10 +45,12 @@ class Node(object):
 		self.access = cindex.AccessSpecifier.PUBLIC
 		self._comment_locations = []
 		self._refs = []
+		self._title=''
 		self.sort_index = 0
 		self.num_anon = 0
 		self.anonymous_id = 0
 		self._refid = None
+		self.slug= None
 		self.weight = 0
 		self.sortid = 0
 		cls = self.__class__
@@ -147,6 +149,8 @@ class Node(object):
 
 	def add_comment_location(self, location):
 		self._comment_locations.append(location)
+		# for each file, sort the locations of comments and nodes?
+		#Comment.file_locations[location.file.name].insert(location.offset)
 
 	@property
 	def comment_locations(self):
@@ -166,6 +170,7 @@ class Node(object):
 			for i in self.children:
 				if i.has_any_docs():
 					return True
+			return self.comment!=None
 		return False
 
 	def parse_comment(self):
@@ -178,7 +183,6 @@ class Node(object):
 			self._comment.brief = self._parsed_comment.brief
 		if len(self._parsed_comment.body) > 0:
 			self._comment.doc = self._parsed_comment.body
-		self._comment.parsedComment=self._parsed_comment.cmt
 
 	@property
 	def natural_sort_name(self):
@@ -244,9 +248,12 @@ class Node(object):
 
 		return parent
 	
+	def set_title(self,t):
+		self._title=t
+
 	@property
 	def title(self):
-		return self.name
+		return self._title
 
 	def output_filename(self,namespace_separator):
 		fn	  =self.qid.replace('::',namespace_separator)
@@ -264,8 +271,7 @@ class Node(object):
 
 	@property
 	def qid(self):
-		meid = self.name
-
+		meid =self.name
 		parent = self.semantic_parent
 
 		if not parent:

@@ -33,7 +33,7 @@ class Md(Generator):
 	def generate(self, outdir):
 		if not outdir:
 			outdir = ''
-
+		outdir=outdir.lower()
 		try:
 			fs.fs.makedirs(outdir)
 		except OSError:
@@ -118,7 +118,7 @@ class Md(Generator):
 			link=relpath
 		else:
 			link=''
-		return link
+		return link.lower()
 
 	def link_md(self,title, rf):
 		lnk=self.ref_to_link(rf)
@@ -294,6 +294,7 @@ class Md(Generator):
 		return res
 
 	def write_md(self, node, fname):
+		fname=fname.lower()
 		elem = self.node_to_md(node)
 		self.written[fname] = True
 		fullpath=os.path.join(self.outdir, fname)

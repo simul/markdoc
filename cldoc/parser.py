@@ -65,7 +65,7 @@ class Parser:
 		if not node.has_any_docs():
 			return ret
 		refname=node.name
-		tabs='\t'*level+'- '
+		tabs='	'*level+'- '
 		ret.append(tabs)
 		ret.append(ParsedElement([node], node.name))
 		ret.append('\n')
@@ -122,7 +122,7 @@ class Parser:
 		self.reset()
 		self.resolver=None
 		self.root=None
-		ParserElement.setDefaultWhitespaceChars(' \t\r')
+		ParserElement.setDefaultWhitespaceChars(' 	\r')
 		
 		#All variables defined on the class level in Python are considered static.
 		# Here, we define static members of the class Parser, from pyparsing:
@@ -146,12 +146,20 @@ class Parser:
 		integer = Word(nums)
 		space=White()
 		backslash=oneOf('\\').suppress()
-		title_k=backslash+Keyword('title')
 		namespaces=(backslash+Keyword('namespaces')+Optional(integer)).setParseAction(partial(self.parseNamespaces))
 		ref=(backslash+Keyword('ref')+identifier+Optional(identifier|quoted_identifier)).setParseAction(partial(self.parseRef))
+
+		title_k=backslash+Keyword('title')
 		title=(title_k+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
+
+		slug_k=backslash+Keyword('name')
+		slug=(slug_k+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
+
+		weight_k=backslash+Keyword('weight')
+		weight=(weight_k+space.suppress()+integer).setParseAction(partial(self.parseDocumentProperty,1))
+
 		plainText=Regex('[^\n\\\\]+').setParseAction(partial(self.parsePlainText))
-		command=(title|namespaces|ref)
+		command=(title|namespaces|ref|slug|weight)
 		bodyElement=(command|plainText)
 		
 		bodyLine = ( NotAny('@') + Group(ZeroOrMore(bodyElement)) + lineEnd).setParseAction(partial(self.parseTest,1))

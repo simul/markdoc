@@ -11,6 +11,7 @@ from . import utf8
 class DocumentMerger:
 	reinclude = re.compile('#<cldoc:include[(]([^)]*)[)]>')
 	reheading = re.compile('(.*)\\s*{#(?:([0-9]*):)?(.*)}')
+	rename = re.compile('(?:.*)\\s*\\\\name\\s*([A-Za-z0-9_-]+)\\s*$')
 	def merge(self, mfilter, files):
 		newfiles=[]
 		for filepath in files:
@@ -36,10 +37,8 @@ class DocumentMerger:
 		ordered = []
 		weight = {}
 		this_weight=0
-
+		this_title=''
 		for line in lines:
-			prefix = '#<cldoc:'
-
 			line = line.rstrip('\n')
 
 			if first:
@@ -48,28 +47,17 @@ class DocumentMerger:
 				if line == '':
 					continue
 			heading=DocumentMerger.reheading.search(line)
-			if line.startswith(prefix) and line.endswith('>'):
-				if len(doc) > 0 and not category:
-					sys.stderr.write('Failed to merge file `{0}\': no #<cldoc:id> specified\n'.format(filename))
-					sys.exit(1)
-
-				if category:
-					if not category in ret:
-						ordered.append(category)
-
-					ret[category] = "\n".join(doc)
-
-				doc = []
-				category = line[len(prefix):-1]
-				this_title=category.strip()
-				first = True
+			name=DocumentMerger.rename.search(line)
+			if name:
+				n1=name.group(0)
+				n2=name.group(1)
+			if name and name.group(1):
+				category=name.group(1)
 			elif heading:
 				if heading.group(2):
 					this_weight=int(heading.group(2))
 				category=heading.group(3)
 				this_title=heading.group(1).strip()
-				line=this_title
-				#doc.append(line)
 			else:
 				doc.append(line)
 		if not this_weight:
@@ -89,7 +77,7 @@ class DocumentMerger:
 		return [[c, ret[c],title[c],weight[c]] for c in ordered]
 
 	def _normalized_qid(self, qid):
-		if qid == 'ref':
+		if qid == 'ref' or qid == 'index':
 			return None
 
 		if qid.startswith('::'):
