@@ -17,6 +17,9 @@ from .generator import Generator
 from cldoc import nodes
 from cldoc import example
 from cldoc import utf8
+from cldoc import parser
+import subprocess 
+import shutil
 
 from xml.etree import ElementTree
 import sys, os
@@ -27,6 +30,7 @@ class Md(Generator):
 	def __init__(self, tree=None, opts=None):
 		self.tree = tree
 		self.options = opts
+		self.images=[]
 		self.namespaces_as_directories=True
 		self._refid=None
 
@@ -60,6 +64,21 @@ class Md(Generator):
 
 		Generator.generate(self, outdir)
 
+		for im in self.images:
+			url=im[0]
+			source_path=im[1]
+			targ=im[2]
+			image_paths=self.options.image_path
+			image_paths.append(source_path)
+			used_path=None
+			for path in image_paths:
+				this_file=path+'/'+url
+				if os.path.isfile(this_file):
+					shutil.copyfile(this_file, targ)
+					used_path=path
+					break
+			if used_path==None:
+				print("Error: image file not found "+url)
 		if self.options.report:
 			self.add_report()
 
@@ -117,7 +136,7 @@ class Md(Generator):
 			relpath=os.path.relpath(fullpath,self.current_path).replace('\\','/')
 			link=relpath
 		else:
-			link=''
+			link=rf
 		return link.lower()
 
 	def link_md(self,title, rf):
@@ -132,6 +151,8 @@ class Md(Generator):
 				ref=''
 				if 'ref' in child.attrib:
 					ref=child.attrib['ref']
+				else:
+					ref='/ref/'+title.lower().replace('::','/')
 				f.write(self.link_md(title,ref))
 		f.write('\n')
 
@@ -335,8 +356,6 @@ class Md(Generator):
 		brief=self.get_brief(elem)
 		doc=self.get_doc(elem)
 		if(elem.tag=='category'):
-			f.write(title)
-			f.write('\n===\n\n')
 			f.write(brief)
 			f.write(doc)
 		else:
@@ -747,6 +766,30 @@ class Md(Generator):
 		for component in doc.components:
 			if isinstance(component, utf8.string):
 				s += component
+			elif isinstance(component,parser.ParsedReference):
+				s+='['+component.title+']('+component.url+')\n'
+			elif isinstance(component,parser.ParsedImage):
+				url='/'+self.options.image_destination+'/'+component.url
+				image_filename=self.outdir+url
+				# we store the current source path and the url, plus the desired target filename.
+				self.images.append((component.url,component.source_path,image_filename))
+				s+='!['+component.title+']('+url+')\n'
+			elif isinstance(component,parser.ParsedGitCmd):
+				cwd = os.getcwd()
+				os.chdir(component.source_path)
+				out=''
+				if component.tokens[0]=='log':
+					num=10
+					if len(component.tokens)>1:
+						num=int(component.tokens[1])
+					branch=['git','rev-parse','--abbrev-ref','HEAD']
+					out='Version '+subprocess.check_output(branch).decode("utf-8")+'---\n'
+					args=['git','log','-'+str(num),'--date=format:%a %d %b','--no-merges','--pretty=format:%cd : %s']
+					#subprocess.Popen(args)
+					out+=subprocess.check_output(args).decode("utf-8")
+				else:
+					print('Error: Unknown git command for cldoc: '+component.tokens[1])
+				s+=(out)
 			elif isinstance(component, example.Example):
 				# Make highlighting
 				if last is None:
@@ -786,39 +829,53 @@ class Md(Generator):
 
 				s = ''
 				last = code
-			elif hasattr(component,'__iter__') and len(component)==2 and isinstance(component[0][0],nodes.Node):
+			elif isinstance(component,nodes.Node):
 				if last is None:
 					doce.text = s
 				else:
 					last.tail = s
+				s=''
+				last = ElementTree.Element('ref')
 
-				s = ''
+				last.text=component.title
 
-				nds = component[0]
-				refname = component[1]
+				self.add_ref_node_id(component, last)
 
-				# Make multiple refs
-				for ci in range(len(nds)):
-					cc = nds[ci]
-
-					last = ElementTree.Element('ref')
-
-					if refname:
-						last.text = refname
-					elif cc.title:
-						last.text=cc.title
+				doce.append(last)
+			elif hasattr(component,'__iter__') and len(component)==2:
+				if isinstance(component[0][0],nodes.Node):
+					if last is None:
+						doce.text = s
 					else:
-						last.text = parent.qlbl_from(cc)
+						last.tail = s
 
-					self.add_ref_node_id(cc, last)
+					s = ''
 
-					if ci != len(nds) - 1:
-						if ci == len(nds) - 2:
-							last.tail = ' and '
+					nds = component[0]
+					refname = component[1]
+
+					# Make multiple refs
+					for ci in range(len(nds)):
+						cc = nds[ci]
+
+						last = ElementTree.Element('ref')
+
+						if refname:
+							last.text = refname
+						elif cc.title:
+							last.text=cc.title
 						else:
-							last.tail = ', '
+							last.text = parent.qlbl_from(cc)
 
-					doce.append(last)
+						self.add_ref_node_id(cc, last)
+
+						if ci != len(nds) - 1:
+							if ci == len(nds) - 2:
+								last.tail = ' and '
+							else:
+								last.tail = ', '
+
+						doce.append(last)
 			else:
 				pass
 
@@ -948,5 +1005,3 @@ class Md(Generator):
 		elif isinstance(node, nodes.Class):
 			# Go deep, but only for inner classes
 			Generator.generate_node(self, node, lambda x: isinstance(x, nodes.Class))
-
-# vi:ts=4:et

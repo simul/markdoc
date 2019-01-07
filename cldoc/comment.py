@@ -11,6 +11,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 from .clang import cindex
+from cldoc import parser
 from .defdict import Defdict
 
 from .struct import Struct
@@ -79,8 +80,11 @@ class Comment(object):
 				return s
 
 	class String(object):
-		def __init__(self, s):
+		def __init__(self, s, pth, fn, ln):
 			self.components = [utf8.utf8(s)]
+			self.path=pth
+			self.filename=fn
+			self.start_line=ln
 
 		def _utf8(self):
 			return utf8.utf8("").join([utf8.utf8(x) for x in self.components])
@@ -127,6 +131,18 @@ class Comment(object):
 	redocmcode = re.compile('(^ *(`{3,}|~{3,}).*?\\2)', re.M | re.S)
 
 	def __init__(self, text, location, opts):
+		ln=0
+		if isinstance(location,cindex.SourceLocation):
+			spl=os.path.split(location.file.name)
+			ln=location.line
+			cl=location.column
+		else:
+			spl=os.path.split(location)
+			ln=0
+			cl=0
+		object.__setattr__(self, 'path', spl[0])
+		object.__setattr__(self, 'start_line', ln)
+		object.__setattr__(self, 'filename', spl[1])
 		self.__dict__['docstrings'] = []
 		self.__dict__['text'] = text
 
@@ -147,10 +163,10 @@ class Comment(object):
 		if isinstance(val, dict):
 			for key in val:
 				if not isinstance(val[key], Comment.String):
-					val[key] = Comment.String(val[key])
+					val[key] = Comment.String(val[key],self.path,self.filename,self.start_line)
 		# Let's NOT change the class of members arbitrarily...
 		elif isinstance(val, str) or isinstance(val, ParseResults):
-			val = Comment.String(val)
+			val = Comment.String(val,self.path,self.filename,self.start_line)
 		else:
 			object.__setattr__(self, name, val)
 			return	# ordinary class members
@@ -215,13 +231,19 @@ class Comment(object):
 		return ret
 	def merge_two_dicts(x, y):
 		z = x.copy()   # start with x's keys and values
-		z.update(y)    # modifies z with y's keys and values & returns None
+		z.update(y)	# modifies z with y's keys and values & returns None
 		return z
 	def resolve_refs_for_doc(self, doc, resolver, root):
 		Comment.parser.reset()
-		if len(doc.components)>0:
-			comps=Comment.parser.parseFull(doc.components[0],resolver, root)
-			self.global_properties.update(Comment.parser.properties)
+		comps=[]
+		for comp in doc.components: 
+			if isinstance(comp, str):
+				comps+=Comment.parser.parseFull(comp, resolver, root, doc.path,doc.filename, doc.start_line)
+				self.global_properties.update(Comment.parser.properties)
+			else:
+				comps.append(comp)
+
+		doc.components = comps
 
 	def resolve_refs(self, resolver, root):
 		if self.__dict__['_resolved']:
@@ -239,7 +261,7 @@ class Comment(object):
 			if isinstance(doc, dict):
 				for key in doc:
 					if not isinstance(doc[key], Comment.String):
-						doc[key] = Comment.String(doc[key])
+						doc[key] = Comment.String(doc[key],self.path,self.start_line)
 
 					self.resolve_refs_for_doc(doc[key], resolver, root)
 			else:
