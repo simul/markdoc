@@ -16,6 +16,10 @@ class ParsedImage(object):
 		self.title=text
 		self.source_path=src
 
+class ParsedReturn(object):
+	def __init__(self,txt):
+		self.text=txt
+
 # A reference to a path not in the current build, but which may already exist on the target.
 class ParsedReference(object):
 	def __init__(self, url, src, text=''):
@@ -147,6 +151,9 @@ class Parser:
 		# TODO: emphasis
 		return utf8.utf8(toks[0])
 
+	def parseReturn(self,cnt,loc,toks):
+		return ParsedReturn(toks[0])
+
 	def parseUnknownCommand(self,cnt,loc,toks):
 		com=''
 		if(len(toks)>0):
@@ -225,11 +232,13 @@ class Parser:
 		title=(title_k+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
 
 		slug_k=backslash+Keyword('name')
-		slug=(slug_k+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
+		slug=(slug_k+space.suppress()+(qualified_identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
 
 		em=((backslash+Keyword('em')+space).suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseEm,1))
 		a=((backslash+Keyword('a')+space).suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseEm,1))
 		param=((backslash+Keyword('param')+space).suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseEm,1))
+		
+		_return=((backslash+Keyword('return')+space).suppress()+(ids)).setParseAction(partial(self.parseReturn,1))
 
 		weight_k=backslash+Keyword('weight')
 		weight=(weight_k+space.suppress()+integer).setParseAction(partial(self.parseDocumentProperty,1))
@@ -244,7 +253,7 @@ class Parser:
 		unknown_command=(unknown_k).setParseAction(partial(self.parseUnknownCommand,1))
 
 		plainText=pt.setParseAction(partial(self.parsePlainText))
-		command=(title|namespaces|ref|subpage|link|slug|em|a|param|weight|image|git|unknown_command)
+		command=(title|namespaces|ref|subpage|link|slug|em|a|param|_return|weight|image|git|unknown_command)
 		bodyElement=(command|plainText)
 		
 		bodyLine = ( NotAny('@') + Group(ZeroOrMore(bodyElement)) + lineEnd).setParseAction(partial(self.parseTest,1))

@@ -145,9 +145,10 @@ class Node(object):
 
 	def add_ref(self, cursor):
 		self._refs.append(cursor)
-		self.add_comment_location(cursor.extent.start)
 
 	def add_comment_location(self, location):
+		if isinstance(location,cindex.SourceLocation):
+			location=(location.file.name,location.line,location.column,location.offset)
 		self._comment_locations.append(location)
 		# for each file, sort the locations of comments and nodes?
 		#Comment.file_locations[location.file.name].insert(location.offset)
@@ -158,7 +159,7 @@ class Node(object):
 			ext = self.cursor.extent
 
 			if not ext is None:
-				yield ext.start
+				yield (ext.start.file.name,ext.start.line,ext.start.column,ext.start.offset)
 
 		for loc in self._comment_locations:
 			yield loc
@@ -256,7 +257,10 @@ class Node(object):
 		return self._title
 
 	def output_filename(self,namespace_separator):
-		fn	  =self.qid.replace('::',namespace_separator)
+		qid=self.qid
+		if self.slug and self.slug!='':
+			qid=self.slug
+		fn	  =qid.replace('::',namespace_separator)
 		elems   =fn.split(':')
 		if len(elems)>1:
 			fn	  =elems[len(elems)-1]
@@ -337,6 +341,7 @@ class Node(object):
 
 		if not override and self._comment:
 			return
+		self.add_comment_location(comment.location)
 
 		self._comment = comment
 		self.parse_comment()

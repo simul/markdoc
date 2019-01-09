@@ -34,8 +34,9 @@ import time
 threadLock = threading.Lock()
 
 class myThread (threading.Thread):
-	def __init__(self, threadID, filename, index,flags, options, files, comment):
+	def __init__(self, tree, threadID, filename, index,flags, options, files, comment):
 		threading.Thread.__init__(self)
+		self.tree=tree
 		self.threadID = threadID
 		self.filename = filename
 		self.index=index
@@ -53,12 +54,8 @@ class myThread (threading.Thread):
 		self.comment=comment
 	def run(self):
 		#print ("Starting " + self.name)
-		# Get lock to synchronize threads
-		#threadLock.acquire()
 		#print_time(self.name, self.counter, 3)
-		
-
-		print('{0} (0): '.format(self.filename))
+		#print('{0} (0): '.format(self.filename))
 		try:
 			self.tu = self.index.parse(self.filename, self.flags, options=cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
 			
@@ -80,8 +77,57 @@ class myThread (threading.Thread):
 		except cindex.LibclangError as e:
 			sys.stderr.write("\nError: Failed to parse.\n" + str(e) + "\n\n")
 			
-		# Free lock to release next thread
-		#threadLock.release()
+		
+		if len(self.tu.diagnostics) != 0:
+			fatal = False
+
+			for d in self.tu.diagnostics:
+				#rewrite Clang errors in visual studio format.
+				# e.g. C:\\vector.h:249:43: error: function declared 'cdecl' here was previously declared without calling convention
+				# becomes C:\\vector.h(249): error: function declared 'cdecl' here was previously declared without calling convention
+				# bizarrely, the disabling option doesn't work in Clang. So let's apply it here:
+				if d.disable_option in self.flags:
+					continue
+				formatted=re.sub(":(\d+):(?:\d+):", "(\\1):", d.format())
+				sys.stderr.write(formatted)
+				sys.stderr.write("\n")
+
+				if d.severity == cindex.Diagnostic.Fatal or \
+				   d.severity == cindex.Diagnostic.Error:
+					fatal = True
+
+			if fatal:
+				sys.stderr.write("\nCould not generate documentation due to parser errors\n")
+				sys.exit(1)
+
+			if not self.tu:
+				sys.stderr.write("Could not parse file %s...\n" % (f,))
+				sys.exit(1)
+				
+			#Get lock to synchronize threads
+			threadLock.acquire()
+			for filename in self.includes:
+				self.tree.headers[filename] = True
+
+			# Extract comments from files and included files that we are
+			# supposed to inspect
+
+			for e in self.extractfiles:
+				if e in self.tree.processed:
+					continue
+				self.tree.add_categories(self.db.category_names)
+				self.tree.commentsdbs[e] = self.db
+
+			
+			#self.tree.processing[self.filename]=True
+			# Free lock to release next thread
+			threadLock.release()
+			self.tree.visit(self.tu.cursor.get_children())
+			threadLock.acquire()
+			#self.tree.processed[self.filename]=True
+			#self.tree.processing[self.filename]=False
+			# Free lock to release next thread
+			threadLock.release()
 
 from .cmp import cmp
 
@@ -252,7 +298,7 @@ class Tree(documentmerger.DocumentMerger):
 	def find_node_comment(self, node):
 
 		for location in node.comment_locations:
-			db = self.commentsdbs[location.file.name]
+			db = self.commentsdbs[location[0]]
 
 			if db:
 				cm = db.lookup(location)
@@ -278,7 +324,7 @@ class Tree(documentmerger.DocumentMerger):
 				continue
 			
 			# Create new threads
-			thr = myThread(thread_id, f, self.index,self.flags,self.options, self.files, comment)
+			thr = myThread(self, thread_id, f, self.index,self.flags,self.options, self.files, comment)
 			thread_id=thread_id+1
 			# Start new Threads
 			thr.start()
@@ -289,55 +335,7 @@ class Tree(documentmerger.DocumentMerger):
 		# Wait for all threads to complete
 		for t in threads:
 			t.join()
-
-		for t in threads:
-			#self.processed.update(t.processed)
-			print(t.filename+"(0): visiting.")
-			if len(t.tu.diagnostics) != 0:
-				fatal = False
-
-				for d in t.tu.diagnostics:
-					#rewrite Clang errors in visual studio format.
-					# e.g. C:\\vector.h:249:43: error: function declared 'cdecl' here was previously declared without calling convention
-					# becomes C:\\vector.h(249): error: function declared 'cdecl' here was previously declared without calling convention
-					# bizarrely, the disabling option doesn't work in Clang. So let's apply it here:
-					if d.disable_option in self.flags:
-						continue
-					formatted=re.sub(":(\d+):(?:\d+):", "(\\1):", d.format())
-					sys.stderr.write(formatted)
-					sys.stderr.write("\n")
-
-					if d.severity == cindex.Diagnostic.Fatal or \
-					   d.severity == cindex.Diagnostic.Error:
-						fatal = True
-
-				if fatal:
-					sys.stderr.write("\nCould not generate documentation due to parser errors\n")
-					sys.exit(1)
-
-			if not t.tu:
-				sys.stderr.write("Could not parse file %s...\n" % (f,))
-				sys.exit(1)
-
-			# Extract comments from files and included files that we are
-			# supposed to inspect
-			for filename in t.includes:
-				self.headers[filename] = True
-
-			for e in t.extractfiles:
-				if e in self.processed:
-					continue
-				db = t.db
-
-				self.add_categories(db.category_names)
-				self.commentsdbs[e] = db
-
-			self.visit(t.tu.cursor.get_children())
-
-			for f in self.processing:
-				self.processed[f] = True
-
-			self.processing = {}
+		self.processing = {}
 
 		# Construct hierarchy of nodes.
 		for node in self.all_nodes:
@@ -478,7 +476,7 @@ class Tree(documentmerger.DocumentMerger):
 				val=node.comment.global_properties[key]
 				if key=='title':
 					node.set_title(val)
-				elif key=='slug':
+				elif key=='slug' or key=='name':
 					node.slug=val
 				elif key=='weight':
 					node.weight=val
@@ -595,40 +593,44 @@ class Tree(documentmerger.DocumentMerger):
 		"""
 		if not citer:
 			return
-
 		while True:
 			try:
 				item = next(citer)
 			except StopIteration:
 				return
-			f = item.location.file
-			# Check the source of item
-			if not f:
-				self.visit(item.get_children())
-				continue
-			locstr=str(f)
-			# Ignore files we already processed
-			if locstr in self.processed:
-				continue
-
-			# Ignore files other than the ones we are scanning for
-			if not locstr in self.files:
-				continue
+		
+			#if locstr in self.processing:
+			#	continue
 
 			# Ignore unexposed things
 			if item.kind == cindex.CursorKind.UNEXPOSED_DECL:
-				self.visit(item.get_children(), parent)
+				#self.visit(item.get_children(), parent)		And don't visit their children!
 				continue
-
-			self.processing[locstr] = True
-
+			
 			if item.kind in self.kindmap:
 				cls = self.kindmap[item.kind]
 
 				if not cls:
 					# Skip
 					continue
-
+				
+				f = item.location.file
+				# Check the source of item
+				if not f:
+					self.visit(item.get_children())
+					continue
+				locstr=str(f)
+				# Ignore files other than the ones we are scanning for
+				if not locstr in self.files:
+					continue
+				# Ignore files we already processed
+				if locstr in self.processed:
+					continue
+				threadLock.acquire()
+				ln=item.location.line
+				print(locstr+"("+str(ln)+"): visiting "+item.displayname)
+				self.processing[locstr] = True
+				threadLock.release()
 				# see if we already have a node for this thing
 				# usr, or Unified Symbol Resolution (USR) is a string that identifies a
 				# particular entity (function, class, variable, etc.)
@@ -638,7 +640,9 @@ class Tree(documentmerger.DocumentMerger):
 					# Only register new nodes if they are exposed.
 					if self.cursor_is_exposed(item):
 						node = cls(item, None)
+						threadLock.acquire()
 						self.register_node(node, parent)
+						threadLock.release()
 
 				elif isinstance(parent, nodes.Typedef) and isinstance(node, nodes.Struct):
 					# Typedefs are handled a bit specially because what happens
@@ -646,13 +650,20 @@ class Tree(documentmerger.DocumentMerger):
 					# then exposes the typedef, with as a child again the
 					# cursor to the already defined struct/enum. This is a
 					# bit reversed as to how we normally process things.
+					threadLock.acquire()
 					self.register_anon_typedef(node, parent)
+					threadLock.release()
 				else:
+					threadLock.acquire()
 					self.cursor_to_node[item] = node
 					node.add_ref(item)
+					threadLock.release()
 
 				if node and node.process_children:
 					self.visit(item.get_children(), node)
+				threadLock.acquire()
+				self.processing[locstr] = False
+				threadLock.release()
 			else:
 				par = self.cursor_to_node[item.semantic_parent]
 
@@ -664,11 +675,14 @@ class Tree(documentmerger.DocumentMerger):
 
 					if not ret is None:
 						for node in ret:
+							threadLock.acquire()
 							self.register_node(node, par)
+							threadLock.release()
 
 				'''ignoretop = [cindex.CursorKind.FRIEND_DECL, cindex.CursorKind.TYPE_REF, cindex.CursorKind.TEMPLATE_REF, cindex.CursorKind.NAMESPACE_REF,cindex.CursorKind.PARM_DECL,cindex.CursorKind.MACRO_INSTANTIATION,cindex.CursorKind.INCLUSION_DIRECTIVE ,cindex.CursorKind.MACRO_DEFINITION,cindex.CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION]
 
 				if (not par or ret is None) and not item.kind in ignoretop:
 					log.warning("Unhandled cursor: %s", item.kind)'''
+			
 
 # vi:ts=4:et

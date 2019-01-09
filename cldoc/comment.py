@@ -133,13 +133,11 @@ class Comment(object):
 	def __init__(self, text, location, opts):
 		ln=0
 		if isinstance(location,cindex.SourceLocation):
-			spl=os.path.split(location.file.name)
-			ln=location.line
-			cl=location.column
-		else:
-			spl=os.path.split(location)
-			ln=0
-			cl=0
+			location=(location.file.name,location.line,location.column,location.offset)
+		spl=os.path.split(location[0])
+		ln=location[1]
+		cl=location[2]
+		
 		object.__setattr__(self, 'path', spl[0])
 		object.__setattr__(self, 'start_line', ln)
 		object.__setattr__(self, 'filename', spl[1])
@@ -261,7 +259,7 @@ class Comment(object):
 			if isinstance(doc, dict):
 				for key in doc:
 					if not isinstance(doc[key], Comment.String):
-						doc[key] = Comment.String(doc[key],self.path,self.start_line)
+						doc[key] = Comment.String(doc[key],self.path,self.filename,self.start_line)
 
 					self.resolve_refs_for_doc(doc[key], resolver, root)
 			else:
@@ -314,7 +312,7 @@ class CommentsDatabase(object):
 		self.filename = filename
 
 		self.categories = RangeMap()
-		self.comments = Sorted(key=lambda x: x.location.offset)
+		self.comments = Sorted(key=lambda x: x.location[3])
 		self.options=opts
 		self.extract(filename, tu)
 
@@ -381,10 +379,10 @@ class CommentsDatabase(object):
 		return self.categories.find(location.offset)
 
 	def lookup(self, location):
-		if location.file.name != self.filename:
+		if location[0]!= self.filename:
 			return None
 
-		return self.comments.find(location.offset)
+		return self.comments.find(location[3]) #offset
 
 	def extract(self, filename, tu):
 		"""

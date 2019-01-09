@@ -241,8 +241,8 @@ class SourceLocation(Structure):
 	def _get_instantiation(self):
 		if self._data is None:
 			f, l, c, o = c_object_p(), c_uint(), c_uint(), c_uint()
-			conf.lib.clang_getInstantiationLocation(self, byref(f), byref(l),
-					byref(c), byref(o))
+			#conf.lib.clang_getInstantiationLocation(self, byref(f), byref(l),byref(c), byref(o))
+			conf.lib.clang_getExpansionLocation(self, byref(f), byref(l),byref(c), byref(o))
 			if f:
 				f = File(f)
 			else:

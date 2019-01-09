@@ -17,6 +17,7 @@ import sys, os, argparse, tempfile, subprocess, shutil
 from . import fs, staticsite
 from . import log
 import glob
+import time
 
 def run_generate(t, opts):
 	if opts.type != 'html' and opts.type != 'xml' and opts.type != 'md':
@@ -165,13 +166,16 @@ def run(args):
 
 	t = tree.Tree(opts.files, cxxflags, opts)
 
+	start = time.time()
 	t.process()
-
 	if opts.merge:
 		t.merge(opts.merge_filter, opts.merge)
-
 	t.cross_ref()
-
 	run_generate(t, opts)
+	end = time.time()
+	total=end - start
+	mins=int((total)/60.0)
+	secs=int(total-(mins*60))
+	print("Took "+str(mins)+" minutes, "+secs+" seconds")
 
 # vi:ts=4:et

@@ -756,18 +756,25 @@ class Md(Generator):
 
 	def field_to_md(self, node, elem):
 		elem.append(self.type_to_md(node.type, node.parent))
+	
+	def plaintext_to_md(self,txt):
+		md=txt.replace('<','\<')
+		md=md.replace('>','\>')
+		return md
 
 	def doc_to_md(self, parent, doc, tagname='doc'):
 		doce = ElementTree.Element(tagname)
 
 		s = ''
 		last = None
-
+		ret=None
 		for component in doc.components:
 			if isinstance(component, utf8.string):
 				s += component
 			elif isinstance(component,parser.ParsedReference):
 				s+='['+component.title+']('+component.url+')\n'
+			elif isinstance(component,parser.ParsedReturn):
+				ret=component
 			elif isinstance(component,parser.ParsedImage):
 				url='/'+self.options.image_destination+'/'+component.url
 				image_filename=self.outdir+url
@@ -784,9 +791,8 @@ class Md(Generator):
 						num=int(component.tokens[1])
 					branch=['git','rev-parse','--abbrev-ref','HEAD']
 					out='Version '+subprocess.check_output(branch).decode("utf-8")+'---\n'
-					args=['git','log','-'+str(num),'--date=format:%a %d %b','--no-merges','--pretty=format:%cd : %s']
-					#subprocess.Popen(args)
-					out+=subprocess.check_output(args).decode("utf-8")
+					args=['git','log','-'+str(num),'--date=format:%a %d %b','--no-merges',"--pretty=format:%cd : %s  "]
+					out+=self.plaintext_to_md(subprocess.check_output(args).decode("utf-8"))
 				else:
 					print('Error: Unknown git command for cldoc: '+component.tokens[1])
 				s+=(out)
@@ -878,7 +884,8 @@ class Md(Generator):
 						doce.append(last)
 			else:
 				pass
-
+		if ret!=None:
+			s+="Return\n---\n"+ret.text
 		if last is None:
 			doce.text = s
 		else:
@@ -912,14 +919,18 @@ class Md(Generator):
 		for prop in props:
 			if props[prop]:
 				elem.set(prop, props[prop])
+		location=None
 		if node.cursor:
-			location=node.cursor.location.file.name
-			if location!='':
-				location=location.replace('\\','/')
-				location=location.replace('//','/')
-				if self.options.strip!=None:
-					location=location.replace(self.options.strip,'')
-				elem.set('location',location)
+			location=(node.cursor.location.file.name,node.cursor.location.line,node.cursor.location.column)
+		for loc in node.comment_locations:
+			location = loc
+		if location:
+			filename=location[0]
+			filename=filename.replace('\\','/')
+			filename=filename.replace('//','/')
+			if self.options.strip!=None:
+				filename=filename.replace(self.options.strip,'')
+			elem.set('location',filename)
 		if not node.comment is None and node.comment.brief:
 			elem.append(self.doc_to_md(node, node.comment.brief, 'brief'))
 

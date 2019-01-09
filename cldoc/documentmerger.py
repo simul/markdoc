@@ -4,6 +4,7 @@ from . import comment
 from . import nodes
 import sys, re
 import glob
+from cldoc.clang import cindex
 
 from . import fs
 from . import utf8
@@ -135,7 +136,7 @@ class DocumentMerger:
 				if qid==None:
 					node.set_title(cat_title)
 			node.weight=weight
-			node.merge_comment(comment.Comment(docstr, filename, self.options), override=True)
+			node.merge_comment(comment.Comment(docstr,(filename,0,0,0), self.options), override=True)
 
 	def add_categories(self, categories):
 		root = None
