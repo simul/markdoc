@@ -1,8 +1,7 @@
-[![Build Status](https://travis-ci.org/jessevdk/cldoc.svg?branch=master)](https://travis-ci.org/jessevdk/cldoc)
-
-cldoc is a clang based documentation generator for C and C++. cldoc tries to
+markdoc is a fork of cldoc, a clang based documentation generator for C and C++. cldoc tries to
 solve the issue of writing C/C++ software documentation with a modern,
 non-intrusive and robust approach.
+markdoc produces markdown _output_ intended for jekyll-based static sites such as GitHub pages.
 
 # Features
 * Uses clang to robustly parse even the most complex C++ projects without
