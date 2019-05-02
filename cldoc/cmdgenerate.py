@@ -176,6 +176,6 @@ def run(args):
 	total=end - start
 	mins=int((total)/60.0)
 	secs=int(total-(mins*60))
-	print("Took "+str(mins)+" minutes, "+secs+" seconds")
+	print("Took "+str(mins)+" minutes, "+str(secs)+" seconds")
 
 # vi:ts=4:et
