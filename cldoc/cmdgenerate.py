@@ -14,35 +14,23 @@ from __future__ import absolute_import
 
 import sys, os, argparse, tempfile, subprocess, shutil
 
-from . import fs, staticsite
+from . import fs
 from . import log
 import glob
 import time
+import re
 
 def run_generate(t, opts):
-	if opts.type != 'html' and opts.type != 'xml' and opts.type != 'md':
+	if opts.type != 'md':
 		return
 
 	from . import generators
 
-	if opts.type == 'html' and opts.static:
-		baseout = fs.fs.mkdtemp()
-	else:
-		baseout = opts.output
+	baseout = opts.output
 
-	xmlout = os.path.join(baseout, 'xml')
-	if opts.type == 'xml':
-		generator = generators.Xml(t, opts)
-		generator.generate('C:\\Simul\\master\\Simul\\Help\\docout\\xml')
 	if opts.type == 'md':
 		generator_md = generators.Md(t, opts)
 		generator_md.generate(baseout)
-
-	if opts.type == 'html':
-		generators.Html(t).generate(baseout, opts.static, opts.custom_js, opts.custom_css)
-
-		if opts.static:
-			staticsite.generate(baseout, opts)
 	if opts.post!=None and opts.post != '':
 		args=opts.post.split(' ')
 		ret=subprocess.call(args,shell=True)
@@ -51,14 +39,39 @@ def run_generate(t, opts):
 			sys.exit(1)
 
 def run(args):
+	genfile=''
 	try:
 		sep = args.index('--')
 	except ValueError:
 		if not '--help' in args:
-			sys.stderr.write('Please use: cldoc generate [CXXFLAGS] -- [OPTIONS] [FILES]\n')
-			sys.exit(1)
+			genfile=args[0]
 		else:
 			sep = -1
+
+	if genfile!='':
+		try:
+			file = open(genfile,'r') 
+		except:
+			sys.stderr.write('Please use: cldoc generate [CXXFLAGS] -- [OPTIONS] [FILES]\n')
+			sys.exit(1)
+		args_file =file.read().splitlines()
+		args=args_file+args[1:]
+		sep = args.index('--')
+
+	for i in range(len(args)):
+		arg=args[i]
+		reg=re.compile('\$\{([a-zA-z0-9]+)}', re.IGNORECASE)
+		iterator=reg.finditer(arg)
+		for match in iterator:
+			sp=match.span()
+			envname=match[1]
+			env=os.environ.get(envname)
+			if env==None:
+				sys.stderr.write('Env var '+envname+' not found.\n')
+				sys.exit(1)
+			arg=arg[0:sp[0]]+env+arg[sp[1]:]
+			iterator=reg.finditer(arg)
+		args[i]=arg
 
 	parser = argparse.ArgumentParser(description='clang based documentation generator.',
 									 usage='%(prog)s generate [CXXFLAGS] -- [OPTIONS] [FILES]')

@@ -33,25 +33,17 @@ test=
     <Compile Include="cldoc\clang\enumerations.py" />
     <Compile Include="cldoc\clang\__init__.py" />
     <Compile Include="cldoc\cmdgenerate.py" />
-    <Compile Include="cldoc\cmdgir.py" />
-    <Compile Include="cldoc\cmdinspect.py" />
-    <Compile Include="cldoc\cmdserve.py" />
     <Compile Include="cldoc\comment.py" />
     <Compile Include="cldoc\defdict.py" />
     <Compile Include="cldoc\documentmerger.py" />
     <Compile Include="cldoc\example.py" />
     <Compile Include="cldoc\fs.py" />
     <Compile Include="cldoc\generators\generator.py" />
-    <Compile Include="cldoc\generators\html.py" />
     <Compile Include="cldoc\generators\md.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="cldoc\generators\report.py" />
-    <Compile Include="cldoc\generators\search.py" />
-    <Compile Include="cldoc\generators\xml.py" />
     <Compile Include="cldoc\generators\__init__.py" />
     <Compile Include="cldoc\includepaths.py" />
-    <Compile Include="cldoc\inspecttree.py" />
     <Compile Include="cldoc\log.py" />
     <Compile Include="cldoc\nodes\category.py" />
     <Compile Include="cldoc\nodes\cclass.py" />

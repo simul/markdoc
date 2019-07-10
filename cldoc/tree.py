@@ -55,7 +55,7 @@ class myThread (threading.Thread):
 	def run(self):
 		#print ("Starting " + self.name)
 		#print_time(self.name, self.counter, 3)
-		#print('{0} (0): '.format(self.filename))
+		print('{0} (0): '.format(self.filename))
 		try:
 			self.tu = self.index.parse(self.filename, self.flags, options=cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
 			
@@ -123,11 +123,11 @@ class myThread (threading.Thread):
 			# Free lock to release next thread
 			threadLock.release()
 			self.tree.visit(self.tu.cursor.get_children())
-			threadLock.acquire()
+			#threadLock.acquire()
 			#self.tree.processed[self.filename]=True
 			#self.tree.processing[self.filename]=False
 			# Free lock to release next thread
-			threadLock.release()
+			#threadLock.release()
 
 from .cmp import cmp
 
@@ -203,7 +203,7 @@ class Tree(documentmerger.DocumentMerger):
 		# Sort files on sources, then headers
 		self.files.sort(key=functools.cmp_to_key(lambda a, b: cmp(self.is_header(a), self.is_header(b))))
 
-		self.processing = {}
+		#self.processing = {}
 		self.kindmap = {}
 
 		# Things to skip
@@ -327,15 +327,15 @@ class Tree(documentmerger.DocumentMerger):
 			thr = myThread(self, thread_id, f, self.index,self.flags,self.options, self.files, comment)
 			thread_id=thread_id+1
 			# Start new Threads
-			thr.start()
+			thr.run()
 			
 			# Add threads to thread list
 			threads.append(thr)
 			
 		# Wait for all threads to complete
-		for t in threads:
-			t.join()
-		self.processing = {}
+		#for t in threads:
+		#	t.join()
+		#self.processing = {}
 
 		# Construct hierarchy of nodes.
 		for node in self.all_nodes:
@@ -628,8 +628,8 @@ class Tree(documentmerger.DocumentMerger):
 					continue
 				threadLock.acquire()
 				ln=item.location.line
-				print(locstr+"("+str(ln)+"): visiting "+item.displayname)
-				self.processing[locstr] = True
+				#print(locstr+"("+str(ln)+"): visiting "+item.displayname)
+				#self.processing[locstr] = True
 				threadLock.release()
 				# see if we already have a node for this thing
 				# usr, or Unified Symbol Resolution (USR) is a string that identifies a
@@ -661,9 +661,9 @@ class Tree(documentmerger.DocumentMerger):
 
 				if node and node.process_children:
 					self.visit(item.get_children(), node)
-				threadLock.acquire()
-				self.processing[locstr] = False
-				threadLock.release()
+				#threadLock.acquire()
+				#self.processing[locstr] = False
+				#threadLock.release()
 			else:
 				par = self.cursor_to_node[item.semantic_parent]
 

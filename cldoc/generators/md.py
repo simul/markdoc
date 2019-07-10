@@ -79,31 +79,11 @@ class Md(Generator):
 					break
 			if used_path==None:
 				print("Error: image file not found "+url)
-		if self.options.report:
-			self.add_report()
 
 		#self.write_md(self.index, 'index.md')
 
 		print('Generated `{0}\''.format(outdir))
 
-
-	def add_report(self):
-		from .report import Report
-
-		reportname = 'report'
-
-		while reportname + '.md' in self.written:
-			reportname = '_' + reportname
-
-		page = Report(self.tree, self.options).generate(reportname)
-
-		elem = ElementTree.Element('report')
-		elem.set('name', 'Documentation generator')
-		elem.set('ref', reportname)
-
-		self.index.append(elem)
-
-		self.write_md(page, reportname + '.md')
 
 	def indent(self, elem, level=0):
 		i = "\n" + "  " * level
