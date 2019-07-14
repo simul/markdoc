@@ -117,7 +117,10 @@ class Md(Generator):
 			link=relpath
 		else:
 			link=rf
-		return link.lower()
+		link=link.lower()
+		if link.find(".htm")==-1:
+			link+=".html"
+		return link
 
 	def link_md(self,title, rf):
 		lnk=self.ref_to_link(rf)
@@ -242,7 +245,7 @@ class Md(Generator):
 			elif child.tag=='doc':
 				doc=child.text
 		#blank line before a heading h4:
-		f.write('\n### <a name="'+elem.attrib['name']+'"/>'+ret_type+' '+elem.attrib['name'])
+		f.write('<a name="'+elem.attrib['name']+'"></a>\n### '+ret_type+' '+elem.attrib['name'])
 
 		arglist=self.get_typed_arguments_text(elem)
 		f.write('('+arglist+')')

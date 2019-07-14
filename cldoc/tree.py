@@ -59,7 +59,8 @@ class myThread (threading.Thread):
 		try:
 			self.tu = self.index.parse(self.filename, self.flags, options=cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
 			
-			for inc in self.tu.get_includes():
+			self.db=comment.CommentsDatabase(self.filename, self.tu, self.options)
+			"""for inc in self.tu.get_includes():
 				filename = str(inc.include)
 				self.includes[filename] = True
 				
@@ -72,7 +73,7 @@ class myThread (threading.Thread):
 			for e in self.extractfiles:
 				if e in self.processed:
 					continue
-				self.db=comment.CommentsDatabase(e, self.tu, self.options)
+				self.db=comment.CommentsDatabase(e, self.tu, self.options)"""
 
 		except cindex.LibclangError as e:
 			sys.stderr.write("\nError: Failed to parse.\n" + str(e) + "\n\n")

@@ -33,8 +33,15 @@ def run_generate(t, opts):
 		generator_md.generate(baseout)
 	if opts.post!=None and opts.post != '':
 		args=opts.post.split(' ')
-		ret=subprocess.call(args,shell=True)
-		if ret!=0:
+		process = subprocess.Popen(args,  stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+		for line in process.stdout:
+			sys.stdout.write(str(line.decode('UTF-8')))
+		if process.stderr:
+			for line in process.stderr:
+				sys.stdout.write(str(line.decode('UTF-8')))
+		#ret=subprocess.call(args,shell=True)
+		process.wait()
+		if process.returncode!=0:
 			sys.stderr.write('Error: failed to run post process '+opts.post+'\n')
 			sys.exit(1)
 
@@ -147,7 +154,10 @@ def run(args):
 		r = glob.glob(opts.clean+'/*')
 		for i in r:
 			if os.path.isdir(i):
-				shutil.rmtree(i)
+				try:
+					shutil.rmtree(i)
+				except:
+					sys.stderr.write('Warning: failed to delete '+i+'\n')
 			else:
 				os.remove(i)
 
