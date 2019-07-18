@@ -78,8 +78,8 @@ class DocumentMerger:
 		return [[c, ret[c],title[c],weight[c]] for c in ordered]
 
 	def _normalized_qid(self, qid):
-		if qid == 'ref' or qid == 'index':
-			return None
+		#if qid == 'ref': #or qid == 'index':
+			#return None
 
 		if qid.startswith('::'):
 			return qid[2:]
@@ -125,9 +125,9 @@ class DocumentMerger:
 
 			qid = self._normalized_qid(parts[0])
 
-			# 'ref' means the root of the reference:
-			if qid=='ref':
-				qid=None
+			# 'ref' means the root of the reference:  ##removing to allow for an index in the ref folder
+			#if qid=='ref':
+				#qid=None
 			if not self.qid_to_node[qid]:
 				self.add_categories([[qid,cat_title]])
 				node = self.category_to_node[qid]
