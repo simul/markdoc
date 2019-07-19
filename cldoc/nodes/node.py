@@ -52,6 +52,7 @@ class Node(object):
 		self._refid = None
 		self.slug= None
 		self.weight = 0
+		self.layout = ''
 		self.sortid = 0
 		cls = self.__class__
 
@@ -307,6 +308,7 @@ class Node(object):
 			'name': self.name,
 			'title': self.title,
 			'weight': self.weight,
+			'layout': self.layout,
 		}
 
 		if self.is_anonymous:

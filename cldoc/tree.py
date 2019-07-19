@@ -481,6 +481,8 @@ class Tree(documentmerger.DocumentMerger):
 					node.slug=val
 				elif key=='weight':
 					node.weight=val
+				elif key=='layout':
+					node.layout=val
 
 		for child in node.children:
 			self.cross_ref_node(child)

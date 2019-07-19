@@ -243,6 +243,9 @@ class Parser:
 		weight_k=backslash+Keyword('weight')
 		weight=(weight_k+space.suppress()+integer).setParseAction(partial(self.parseDocumentProperty,1))
 
+		layout_k=backslash+Keyword('layout')
+		layout=(layout_k+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseDocumentProperty,1))
+
 		image_k=backslash+Keyword('image')
 		image=(image_k.suppress()+space.suppress()+Keyword('html').suppress()+space.suppress()+(identifier|quoted_identifier)).setParseAction(partial(self.parseImage,1))
 		
@@ -253,7 +256,7 @@ class Parser:
 		unknown_command=(unknown_k).setParseAction(partial(self.parseUnknownCommand,1))
 
 		plainText=pt.setParseAction(partial(self.parsePlainText))
-		command=(title|namespaces|ref|subpage|link|slug|em|a|param|_return|weight|image|git|unknown_command)
+		command=(title|namespaces|ref|subpage|link|slug|em|a|param|_return|weight|layout|image|git|unknown_command)
 		bodyElement=(command|plainText)
 		
 		bodyLine = ( NotAny('@') + Group(ZeroOrMore(bodyElement)) + lineEnd).setParseAction(partial(self.parseTest,1))

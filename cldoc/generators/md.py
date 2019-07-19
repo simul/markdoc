@@ -319,6 +319,10 @@ class Md(Generator):
 		if 'weight' in elem.attrib:
 			weight=elem.attrib['weight']
 		layout_name='reference'
+		if 'layout' in elem.attrib:
+			layout_name = elem.attrib['layout']
+
+
 
 		# if(elem.tag=='category'):
 		#else:
@@ -966,6 +970,8 @@ class Md(Generator):
 			elem.set('name', props['name'])
 		if 'weight' in props:
 			elem.set('weight', props['weight'])
+		if 'layout' in props:
+			elem.set('layout', props['layout'])
 
 		# can't put arbitrary text into brief, because markdown is replaced with html.
 		# but we must make sure there's something there or it will be skipped
