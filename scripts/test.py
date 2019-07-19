@@ -16,7 +16,7 @@ VULKAN_SDK=VULKAN_SDK.replace('\\','/')
 print('VULKAN_SDK '+VULKAN_SDK)
 args=['C:/Simul/4.2/Simul/Simul.markdoc']
 os.environ['INCLUDE']=''
-source_dirs=['Base','Math','Geometry','Sky','Clouds','Terrain','Platform/CrossPlatform','Plugins/PluginRenderInterface']
+source_dirs=['Base','Math','Geometry','Sky','Clouds','Terrain','Platform/CrossPlatform','Plugins/TrueSkyPluginRender']
 for d in  source_dirs:
 	dir=SIMUL+'/'+d+'/*.h'
 	args.append(dir)
