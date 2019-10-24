@@ -131,7 +131,7 @@ def run(args):
 	parser.add_argument('--post', default=None, metavar='POST',
 						  help='command to execute after completion')
 
-	parser.add_argument('--image-destination', default='Images', metavar='IMAGE_TARGET',
+	parser.add_argument('--image-destination', default='images', metavar='IMAGE_TARGET',
 						  help='Folder to put images in under output dir.')
 
 	parser.add_argument('--image-path', default=[], metavar='IMAGE_PATHS', action='append',
