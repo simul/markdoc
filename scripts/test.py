@@ -1,5 +1,7 @@
 import sys, os
-SIMUL=os.environ['SIMUL']
+os.environ['DOCS']='../docs'
+SIMUL='D:/Jarvis/Documentation/Simul'
+os.environ['SIMUL']=SIMUL
 SIMUL=SIMUL.replace('\\','/')
 print('SIMUL dir '+SIMUL)
 sys.path.append(SIMUL+'/External/cldoc')
@@ -14,7 +16,7 @@ except:
 	VULKAN_SDK='D:/Code/VulkanSDK'
 VULKAN_SDK=VULKAN_SDK.replace('\\','/')
 print('VULKAN_SDK '+VULKAN_SDK)
-args=['C:/Simul/4.2/Simul/Simul.markdoc']
+args=[SIMUL+'/Simul.markdoc']
 os.environ['INCLUDE']=''
 source_dirs=['Base','Math','Geometry','Sky','Clouds','Terrain','Platform/CrossPlatform','Plugins/TrueSkyPluginRender']
 for d in  source_dirs:
