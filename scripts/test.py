@@ -1,8 +1,15 @@
 import sys, os
-SIMUL=os.environ['SIMUL']
+SIMUL=os.environ['SIMUL']=os.environ.get('SIMUL','../../')
 SIMUL=SIMUL.replace('\\','/')
 print('SIMUL dir '+SIMUL)
 sys.path.append(SIMUL+'/External/cldoc')
+
+DOCS =os.environ['SIMUL']+'/documentation'
+os.environ['DOCS']= DOCS
+print('Doc Output Directory: '+DOCS)
+os.environ['VISUALSTUDIODIR']='C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC'
+
+
 os.environ["CLDOC_DEV"] = "1"
 # import folder cldoc as a package.
 import cldoc
@@ -14,7 +21,7 @@ except:
 	VULKAN_SDK='D:/Code/VulkanSDK'
 VULKAN_SDK=VULKAN_SDK.replace('\\','/')
 print('VULKAN_SDK '+VULKAN_SDK)
-args=['C:/Simul/4.2/Simul/Simul.markdoc']
+args=[SIMUL+'/Simul.markdoc']
 os.environ['INCLUDE']=''
 source_dirs=['Base','Math','Geometry','Sky','Clouds','Terrain','Platform/CrossPlatform','Plugins/TrueSkyPluginRender']
 for d in  source_dirs:
