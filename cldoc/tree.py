@@ -166,6 +166,7 @@ else:
 		fclang=libclang+'/libclang.dll'
 		if os.path.exists(fclang):
 			cindex.Config.set_library_path(os.path.dirname(fclang))
+			os.environ['Path']=libclang+";"+os.environ['Path']
 			found = True
 			break
 	if not found:
